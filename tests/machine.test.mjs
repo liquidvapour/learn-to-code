@@ -50,7 +50,31 @@ test('MOV accepts byte endpoints and rejects values outside a byte', () => {
     /Unknown register/,
   )
   assert.throws(
-    () => executeInstruction(state, { operation: 'ADD', register: 'R0', value: 5 }),
+    () => executeInstruction(state, { operation: 'SUB', register: 'R0', value: 5 }),
     /Unsupported instruction/,
   )
+})
+
+test('ADD wraps at 8 bits and sets the zero flag from its result', () => {
+  const state = createInitialState()
+  const prepared = {
+    ...state,
+    registers: { ...state.registers, R0: 255, R1: 1 },
+  }
+  const result = executeInstruction(prepared, { operation: 'ADD', register: 'R0', source: 'R1' })
+
+  assert.equal(result.state.registers.R0, 0)
+  assert.equal(result.state.registers.R1, 1)
+  assert.equal(result.state.zf, true)
+  assert.equal(result.state.pc, 1)
+  assert.equal(prepared.registers.R0, 255)
+  assert.equal(prepared.zf, false)
+  assert.deepEqual(result.events, [{
+    kind: 'register-write', register: 'R0', previous: 255, value: 0,
+    source: 'addition', sourceRegister: 'R1',
+  }])
+
+  const afterNonzero = executeInstruction(result.state, { operation: 'ADD', register: 'R0', source: 'R1' })
+  assert.equal(afterNonzero.state.registers.R0, 1)
+  assert.equal(afterNonzero.state.zf, false)
 })

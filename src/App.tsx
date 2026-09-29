@@ -11,6 +11,7 @@ import {
 const program: readonly { source: string; instruction: Instruction }[] = [
   { source: 'MOV R0, 5', instruction: { operation: 'MOV', register: 'R0', value: 5 } },
   { source: 'MOV R1, 7', instruction: { operation: 'MOV', register: 'R1', value: 7 } },
+  { source: 'ADD R0, R1', instruction: { operation: 'ADD', register: 'R0', source: 'R1' } },
 ]
 
 type ExecutionView = {
@@ -52,7 +53,7 @@ function App() {
       <div className="workspace" aria-label="Tiny Machine workspace">
         <section className="panel" aria-labelledby="program-title">
           <h2 id="program-title">Program</h2>
-          <p className="panel-note">A two-instruction demo. Text editing comes later.</p>
+          <p className="panel-note">A fixed demo. Text editing comes later.</p>
           <ol className="program-list">
             {program.map((line, index) => (
               <li
@@ -86,6 +87,7 @@ function App() {
               </div>
             ))}
           </dl>
+          <p className="flag-value">Zero flag (ZF): <strong>{machine.zf ? '1' : '0'}</strong></p>
           <p className="step-explanation" aria-live="polite">
             {lastWrite
               ? `${lastWrite.register}: ${lastWrite.previous} → ${lastWrite.value}`

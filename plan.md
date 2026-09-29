@@ -13,13 +13,15 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Set up fnm Node 24 and npm with a lockfile (`2ead793`).
 - [x] Add a deterministic machine state and the first `MOV` instruction, with tests.
 - [x] Connect Step and Reset to a two-instruction `MOV` demo, with an active instruction marker and live register values.
+- [x] Add 8-bit `ADD`, show the zero flag, and extend the demo through the third instruction.
 
 ## Next small steps
 
+- [ ] **PUSH:** write a register byte to the downward-growing stack in machine memory, then show that stack address and value on the page.
+- [ ] **HALT:** add an explicit halted state and run the five-instruction sample end to end.
 - [ ] **Hex explorer:** show all 256 bytes in 16 rows with address and offset headings. Let a learner select a byte and see its hex, unsigned decimal, binary, and ASCII interpretations.
 - [ ] **First memory write:** add `STORE`, show the changed byte in the hex view, and explain a write such as decimal `65` becoming hex `41` and ASCII `A`.
 - [ ] **Editable program:** replace the fixed program display with a text editor. Parse and validate the supported instructions before execution, with clear line-specific errors. Reset execution when source changes.
-- [ ] **Complete the sample:** add `ADD`, `PUSH`, and `HALT` in small steps, with a stack view backed by the same memory. Run the five-instruction sample end to end.
 - [ ] **Continuous execution:** add Run/Pause and a speed control while preserving the same step behaviour.
 - [ ] **Movement cues:** use execution events to highlight reads and writes, then add optional motion that can be reduced or disabled.
 
@@ -34,6 +36,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 ## Decisions so far
 
 The current machine uses zero-based instruction indices in `PC`. `MOV` accepts an unsigned byte (`0` through `255`), advances `PC` by one, and leaves `ZF`, `SP`, and memory unchanged. The empty downward-growing stack starts with `SP` one past the final byte, at `256`; its push behaviour will be defined when `PUSH` is implemented.
+
+`ADD` stores the low 8 bits of the sum in its destination register and sets `ZF` when the stored result is zero.
 
 ## Working rule
 
