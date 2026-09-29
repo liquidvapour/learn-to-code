@@ -64,14 +64,105 @@ h1 {
   margin: 0.75rem 0 1.5rem;
 }
 
-pre {
+.program-list {
+  padding: 0;
+  margin: 0 0 1.5rem;
+  list-style: none;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.program-line {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 3rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.program-line.active {
+  border-color: #80c7bd;
+  background: #213a3c;
+}
+
+.line-number {
+  color: #9ba9b6;
+}
+
+.next-marker {
+  margin-left: auto;
+  color: #a9ebe1;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+button {
+  padding: 0.65rem 1.1rem;
+  border: 1px solid #80c7bd;
+  border-radius: 8px;
+  background: #80c7bd;
+  color: #10151b;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  color: #e6edf3;
+  border-color: #556775;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+button:focus-visible {
+  outline: 3px solid #e6edf3;
+  outline-offset: 3px;
+}
+
+.execution-status,
+.step-explanation {
+  margin-top: 1.5rem;
+  color: #b9e1d8;
+}
+
+.register-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.register {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
   padding: 1rem;
+  border: 1px solid #34414c;
   border-radius: 8px;
   background: #10151b;
-  color: #b9e1d8;
-  font-size: 0.95rem;
-  line-height: 1.8;
-  overflow-x: auto;
+}
+
+.register dt {
+  color: #9ba9b6;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.register dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 1.5rem;
 }
 
 @media (max-width: 900px) {

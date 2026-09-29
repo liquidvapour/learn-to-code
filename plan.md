@@ -12,10 +12,10 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Scaffold a runnable React and TypeScript page with Program, Machine, and Memory areas (`38f0b2d`).
 - [x] Set up fnm Node 24 and npm with a lockfile (`2ead793`).
 - [x] Add a deterministic machine state and the first `MOV` instruction, with tests.
+- [x] Connect Step and Reset to a two-instruction `MOV` demo, with an active instruction marker and live register values.
 
 ## Next small steps
 
-- [ ] **First visible step:** connect Step and Reset to that core. Show the active instruction and register values using a short `MOV` program. Keep the UI honest about which instructions work.
 - [ ] **Hex explorer:** show all 256 bytes in 16 rows with address and offset headings. Let a learner select a byte and see its hex, unsigned decimal, binary, and ASCII interpretations.
 - [ ] **First memory write:** add `STORE`, show the changed byte in the hex view, and explain a write such as decimal `65` becoming hex `41` and ASCII `A`.
 - [ ] **Editable program:** replace the fixed program display with a text editor. Parse and validate the supported instructions before execution, with clear line-specific errors. Reset execution when source changes.
