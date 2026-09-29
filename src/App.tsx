@@ -17,6 +17,9 @@ const program: readonly { source: string; instruction: Instruction }[] = [
   { source: 'HALT', instruction: { operation: 'HALT' } },
 ]
 
+const BYTES_PER_ROW = 16
+const memoryRows = Array.from({ length: MEMORY_SIZE / BYTES_PER_ROW }, (_, row) => row * BYTES_PER_ROW)
+
 type ExecutionView = {
   machine: MachineState
   lastEvent: MachineEvent | null
@@ -24,6 +27,10 @@ type ExecutionView = {
 
 function hex(value: number, width = 2) {
   return `0x${value.toString(16).toUpperCase().padStart(width, '0')}`
+}
+
+function asciiCharacter(value: number) {
+  return value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'
 }
 
 function describeEvent(event: MachineEvent | null) {
@@ -114,7 +121,34 @@ function App() {
 
         <section className="panel" aria-labelledby="memory-title">
           <h2 id="memory-title">Memory</h2>
-          <p className="panel-note">The stack stores bytes in machine memory. The full hex explorer comes next.</p>
+          <p className="panel-note">All 256 memory bytes, shown in hexadecimal. The stack below is another view of this same memory.</p>
+          <div className="memory-grid" role="region" aria-label="Memory hex grid" tabIndex={0}>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Address</th>
+                  {Array.from({ length: BYTES_PER_ROW }, (_, offset) => (
+                    <th scope="col" key={offset}>+{offset.toString(16).toUpperCase()}</th>
+                  ))}
+                  <th scope="col">ASCII</th>
+                </tr>
+              </thead>
+              <tbody>
+                {memoryRows.map((startAddress) => (
+                  <tr key={startAddress}>
+                    <th scope="row">{hex(startAddress)}</th>
+                    {Array.from({ length: BYTES_PER_ROW }, (_, offset) => {
+                      const value = machine.memory[startAddress + offset]
+                      return <td key={offset}>{value.toString(16).toUpperCase().padStart(2, '0')}</td>
+                    })}
+                    <td className="ascii-view">
+                      {Array.from({ length: BYTES_PER_ROW }, (_, offset) => asciiCharacter(machine.memory[startAddress + offset])).join('')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <p className="stack-pointer">SP: {hex(machine.sp)}{machine.sp === MEMORY_SIZE ? ' (empty)' : ''}</p>
           <h3>Stack <span>(top first)</span></h3>
           {stackAddresses.length === 0 ? (

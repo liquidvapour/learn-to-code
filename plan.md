@@ -22,7 +22,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
-- [ ] **Hex explorer:** show all 256 bytes in 16 rows with address and offset headings. Let a learner select a byte and see its hex, unsigned decimal, binary, and ASCII interpretations.
+- [ ] **Hex grid:** show all 256 bytes in 16 rows with address and offset headings, plus an aligned ASCII view.
+- [ ] **Byte inspector:** let a learner select a memory byte and see its address, hex, unsigned decimal, binary, and ASCII interpretations.
 - [ ] **First memory write:** add `STORE`, show the changed byte in the hex view, and explain a write such as decimal `65` becoming hex `41` and ASCII `A`.
 - [ ] **Editable program:** replace the fixed program display with a text editor. Parse and validate the supported instructions before execution, with clear line-specific errors. Reset execution when source changes.
 - [ ] **Continuous execution:** add Run/Pause and a speed control while preserving the same step behaviour.

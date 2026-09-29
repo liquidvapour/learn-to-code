@@ -181,6 +181,58 @@ button:focus-visible {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
+.memory-grid {
+  margin-top: 1rem;
+  overflow-x: auto;
+  border: 1px solid #34414c;
+  border-radius: 8px;
+  background: #10151b;
+}
+
+.memory-grid:focus-visible {
+  outline: 3px solid #e6edf3;
+  outline-offset: 3px;
+}
+
+.memory-grid table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.memory-grid th,
+.memory-grid td {
+  padding: 0.45rem 0.5rem;
+  text-align: center;
+}
+
+.memory-grid thead th {
+  position: sticky;
+  top: 0;
+  color: #9ba9b6;
+  background: #192129;
+  font-weight: 400;
+}
+
+.memory-grid tbody tr:nth-child(even) {
+  background: #151c23;
+}
+
+.memory-grid tbody th {
+  color: #b9e1d8;
+  font-weight: 400;
+  text-align: left;
+}
+
+.memory-grid .ascii-view {
+  padding-right: 0.75rem;
+  color: #b9e1d8;
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+
 .panel h3 {
   margin: 1.5rem 0 0.5rem;
   font-size: 1rem;
