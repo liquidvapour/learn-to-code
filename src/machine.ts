@@ -26,20 +26,19 @@ export type MachineState = Readonly<{
   halted: boolean
 }>
 
-export type MachineEvent = Readonly<{
-  kind: 'register-write'
-  register: Register
-  previous: number
-  value: number
+type RegisterWriteSource = Readonly<{
   source: 'immediate'
 }> | Readonly<{
+  source: 'addition'
+  sourceRegister: Register
+}>
+
+export type MachineEvent = Readonly<({
   kind: 'register-write'
   register: Register
   previous: number
   value: number
-  source: 'addition'
-  sourceRegister: Register
-}> | Readonly<{
+} & RegisterWriteSource)> | Readonly<{
   kind: 'memory-write'
   address: number
   previous: number
@@ -53,6 +52,27 @@ export type StepResult = Readonly<{
   state: MachineState
   events: readonly MachineEvent[]
 }>
+
+function completeStep(state: MachineState, changes: Partial<MachineState>, event: MachineEvent): StepResult {
+  return {
+    state: { ...state, ...changes, pc: state.pc + 1 },
+    events: [event],
+  }
+}
+
+function writeRegister(
+  state: MachineState,
+  register: Register,
+  value: number,
+  source: RegisterWriteSource,
+  changes: Partial<MachineState> = {},
+): StepResult {
+  return completeStep(
+    state,
+    { ...changes, registers: { ...state.registers, [register]: value } },
+    { kind: 'register-write', register, previous: state.registers[register], value, ...source },
+  )
+}
 
 export function createInitialState(): MachineState {
   return {
@@ -75,10 +95,7 @@ export function executeInstruction(state: MachineState, instruction: Instruction
   }
 
   if (instruction.operation === 'HALT') {
-    return {
-      state: { ...state, pc: state.pc + 1, halted: true },
-      events: [{ kind: 'halt' }],
-    }
+    return completeStep(state, { halted: true }, { kind: 'halt' })
   }
 
   if (!REGISTER_NAMES.includes(instruction.register)) {
@@ -92,20 +109,7 @@ export function executeInstruction(state: MachineState, instruction: Instruction
       throw new RangeError('MOV value must be an integer from 0 to 255')
     }
 
-    return {
-      state: {
-        ...state,
-        registers: { ...state.registers, [instruction.register]: instruction.value },
-        pc: state.pc + 1,
-      },
-      events: [{
-        kind: 'register-write',
-        register: instruction.register,
-        previous,
-        value: instruction.value,
-        source: 'immediate',
-      }],
-    }
+    return writeRegister(state, instruction.register, instruction.value, { source: 'immediate' })
   }
 
   if (instruction.operation === 'ADD') {
@@ -114,22 +118,13 @@ export function executeInstruction(state: MachineState, instruction: Instruction
     }
 
     const value = (previous + state.registers[instruction.source]) & 0xff
-    return {
-      state: {
-        ...state,
-        registers: { ...state.registers, [instruction.register]: value },
-        pc: state.pc + 1,
-        zf: value === 0,
-      },
-      events: [{
-        kind: 'register-write',
-        register: instruction.register,
-        previous,
-        value,
-        source: 'addition',
-        sourceRegister: instruction.source,
-      }],
-    }
+    return writeRegister(
+      state,
+      instruction.register,
+      value,
+      { source: 'addition', sourceRegister: instruction.source },
+      { zf: value === 0 },
+    )
   }
 
   if (state.sp === 0) {
@@ -141,19 +136,15 @@ export function executeInstruction(state: MachineState, instruction: Instruction
   const oldByte = memory[address]
   memory[address] = previous
 
-  return {
-    state: {
-      ...state,
-      memory,
-      pc: state.pc + 1,
-      sp: address,
-    },
-    events: [{
+  return completeStep(
+    state,
+    { memory, sp: address },
+    {
       kind: 'memory-write',
       address,
       previous: oldByte,
       value: previous,
       sourceRegister: instruction.register,
-    }],
-  }
+    },
+  )
 }

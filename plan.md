@@ -16,6 +16,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Add 8-bit `ADD`, show the zero flag, and extend the demo through the third instruction.
 - [x] Add `PUSH` and a stack view backed by machine memory.
 - [x] Add `HALT` and run the five-instruction sample end to end.
+- [x] Share instruction completion and register-write logic in the machine core.
 
 ## Next small steps
 
