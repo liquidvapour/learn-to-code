@@ -7,3 +7,4 @@
 - Run checks appropriate to the change before committing code. If a check cannot run, say so.
 - Do not include unrelated edits in a commit. Preserve existing work and inspect the Git diff before staging.
 - When a task needs several steps, build it in a sequence that lets the user see the code evolve through the commits.
+- Keep `plan.md` current as steps are completed. Break down upcoming work before implementing it, and leave distant work broad.
