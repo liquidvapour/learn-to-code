@@ -78,3 +78,38 @@ test('ADD wraps at 8 bits and sets the zero flag from its result', () => {
   assert.equal(afterNonzero.state.registers.R0, 1)
   assert.equal(afterNonzero.state.zf, false)
 })
+
+test('PUSH writes a register byte to memory and moves the stack pointer down', () => {
+  const initial = createInitialState()
+  const state = {
+    ...initial,
+    registers: { ...initial.registers, R0: 12, R1: 7 },
+  }
+  const first = executeInstruction(state, { operation: 'PUSH', register: 'R0' })
+  const second = executeInstruction(first.state, { operation: 'PUSH', register: 'R1' })
+
+  assert.equal(first.state.sp, 255)
+  assert.equal(first.state.memory[255], 12)
+  assert.equal(first.state.pc, 1)
+  assert.equal(second.state.sp, 254)
+  assert.equal(second.state.memory[254], 7)
+  assert.equal(second.state.memory[255], 12)
+  assert.equal(second.state.pc, 2)
+  assert.equal(state.memory[255], 0)
+  assert.equal(first.state.memory[254], 0)
+  assert.deepEqual(first.events, [{
+    kind: 'memory-write', address: 255, previous: 0, value: 12, sourceRegister: 'R0',
+  }])
+})
+
+test('PUSH rejects a full stack without changing memory', () => {
+  const initial = createInitialState()
+  const full = { ...initial, sp: 0 }
+
+  assert.throws(
+    () => executeInstruction(full, { operation: 'PUSH', register: 'R0' }),
+    /Stack overflow/,
+  )
+  assert.equal(full.sp, 0)
+  assert.equal(full.memory[0], 0)
+})

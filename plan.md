@@ -14,10 +14,10 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Add a deterministic machine state and the first `MOV` instruction, with tests.
 - [x] Connect Step and Reset to a two-instruction `MOV` demo, with an active instruction marker and live register values.
 - [x] Add 8-bit `ADD`, show the zero flag, and extend the demo through the third instruction.
+- [x] Add `PUSH` and a stack view backed by machine memory.
 
 ## Next small steps
 
-- [ ] **PUSH:** write a register byte to the downward-growing stack in machine memory, then show that stack address and value on the page.
 - [ ] **HALT:** add an explicit halted state and run the five-instruction sample end to end.
 - [ ] **Hex explorer:** show all 256 bytes in 16 rows with address and offset headings. Let a learner select a byte and see its hex, unsigned decimal, binary, and ASCII interpretations.
 - [ ] **First memory write:** add `STORE`, show the changed byte in the hex view, and explain a write such as decimal `65` becoming hex `41` and ASCII `A`.
@@ -38,6 +38,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 The current machine uses zero-based instruction indices in `PC`. `MOV` accepts an unsigned byte (`0` through `255`), advances `PC` by one, and leaves `ZF`, `SP`, and memory unchanged. The empty downward-growing stack starts with `SP` one past the final byte, at `256`; its push behaviour will be defined when `PUSH` is implemented.
 
 `ADD` stores the low 8 bits of the sum in its destination register and sets `ZF` when the stored result is zero.
+
+`PUSH` decrements `SP` before writing, so `SP` points at the top byte after a push. The empty stack has `SP = 256`, and a push at `SP = 0` overflows. Stack writes copy memory before changing it, leaving earlier machine states intact.
 
 ## Working rule
 

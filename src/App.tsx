@@ -12,21 +12,27 @@ const program: readonly { source: string; instruction: Instruction }[] = [
   { source: 'MOV R0, 5', instruction: { operation: 'MOV', register: 'R0', value: 5 } },
   { source: 'MOV R1, 7', instruction: { operation: 'MOV', register: 'R1', value: 7 } },
   { source: 'ADD R0, R1', instruction: { operation: 'ADD', register: 'R0', source: 'R1' } },
+  { source: 'PUSH R0', instruction: { operation: 'PUSH', register: 'R0' } },
 ]
 
 type ExecutionView = {
   machine: MachineState
-  lastWrite: MachineEvent | null
+  lastEvent: MachineEvent | null
+}
+
+function hex(value: number, width = 2) {
+  return `0x${value.toString(16).toUpperCase().padStart(width, '0')}`
 }
 
 function App() {
   const [execution, setExecution] = useState<ExecutionView>(() => ({
     machine: createInitialState(),
-    lastWrite: null,
+    lastEvent: null,
   }))
 
-  const { machine, lastWrite } = execution
+  const { machine, lastEvent } = execution
   const hasNextInstruction = machine.pc < program.length
+  const stackAddresses = Array.from({ length: 256 - machine.sp }, (_, offset) => machine.sp + offset)
 
   function step() {
     setExecution((previous) => {
@@ -34,12 +40,12 @@ function App() {
       if (!next) return previous
 
       const result = executeInstruction(previous.machine, next.instruction)
-      return { machine: result.state, lastWrite: result.events[0] ?? null }
+      return { machine: result.state, lastEvent: result.events[0] ?? null }
     })
   }
 
   function reset() {
-    setExecution({ machine: createInitialState(), lastWrite: null })
+    setExecution({ machine: createInitialState(), lastEvent: null })
   }
 
   return (
@@ -89,15 +95,35 @@ function App() {
           </dl>
           <p className="flag-value">Zero flag (ZF): <strong>{machine.zf ? '1' : '0'}</strong></p>
           <p className="step-explanation" aria-live="polite">
-            {lastWrite
-              ? `${lastWrite.register}: ${lastWrite.previous} → ${lastWrite.value}`
-              : 'Press Step to execute the highlighted instruction.'}
+            {lastEvent === null
+              ? 'Press Step to execute the highlighted instruction.'
+              : lastEvent.kind === 'memory-write'
+                ? `${lastEvent.sourceRegister} → memory ${hex(lastEvent.address)}: ${lastEvent.value}`
+                : `${lastEvent.register}: ${lastEvent.previous} → ${lastEvent.value}`}
           </p>
         </section>
 
         <section className="panel" aria-labelledby="memory-title">
           <h2 id="memory-title">Memory</h2>
-          <p className="panel-note">The 256-byte hex explorer is the next step.</p>
+          <p className="panel-note">The stack stores bytes in machine memory. The full hex explorer comes next.</p>
+          <p className="stack-pointer">SP: {hex(machine.sp)}{machine.sp === 256 ? ' (empty)' : ''}</p>
+          <h3>Stack <span>(top first)</span></h3>
+          {stackAddresses.length === 0 ? (
+            <p className="empty-stack">No values pushed yet.</p>
+          ) : (
+            <table className="stack-table">
+              <thead><tr><th scope="col">Address</th><th scope="col">Hex</th><th scope="col">Dec</th></tr></thead>
+              <tbody>
+                {stackAddresses.map((address) => (
+                  <tr key={address}>
+                    <th scope="row">{hex(address)}</th>
+                    <td>{hex(machine.memory[address])}</td>
+                    <td>{machine.memory[address]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </section>
       </div>
     </main>

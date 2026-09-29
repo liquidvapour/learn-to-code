@@ -10,6 +10,9 @@ export type Instruction = Readonly<{
   operation: 'ADD'
   register: Register
   source: Register
+}> | Readonly<{
+  operation: 'PUSH'
+  register: Register
 }>
 
 export type MachineState = Readonly<{
@@ -33,6 +36,12 @@ export type MachineEvent = Readonly<{
   value: number
   source: 'addition'
   sourceRegister: Register
+}> | Readonly<{
+  kind: 'memory-write'
+  address: number
+  previous: number
+  value: number
+  sourceRegister: Register
 }>
 
 export type StepResult = Readonly<{
@@ -51,7 +60,7 @@ export function createInitialState(): MachineState {
 }
 
 export function executeInstruction(state: MachineState, instruction: Instruction): StepResult {
-  if (!['MOV', 'ADD'].includes(instruction.operation)) {
+  if (!['MOV', 'ADD', 'PUSH'].includes(instruction.operation)) {
     throw new Error(`Unsupported instruction: ${instruction.operation}`)
   }
 
@@ -82,25 +91,52 @@ export function executeInstruction(state: MachineState, instruction: Instruction
     }
   }
 
-  if (!REGISTER_NAMES.includes(instruction.source)) {
-    throw new RangeError(`Unknown register: ${instruction.source}`)
+  if (instruction.operation === 'ADD') {
+    if (!REGISTER_NAMES.includes(instruction.source)) {
+      throw new RangeError(`Unknown register: ${instruction.source}`)
+    }
+
+    const value = (previous + state.registers[instruction.source]) & 0xff
+    return {
+      state: {
+        ...state,
+        registers: { ...state.registers, [instruction.register]: value },
+        pc: state.pc + 1,
+        zf: value === 0,
+      },
+      events: [{
+        kind: 'register-write',
+        register: instruction.register,
+        previous,
+        value,
+        source: 'addition',
+        sourceRegister: instruction.source,
+      }],
+    }
   }
 
-  const value = (previous + state.registers[instruction.source]) & 0xff
+  if (state.sp === 0) {
+    throw new RangeError('Stack overflow: no memory remains for PUSH')
+  }
+
+  const address = state.sp - 1
+  const memory = state.memory.slice()
+  const oldByte = memory[address]
+  memory[address] = previous
+
   return {
     state: {
       ...state,
-      registers: { ...state.registers, [instruction.register]: value },
+      memory,
       pc: state.pc + 1,
-      zf: value === 0,
+      sp: address,
     },
     events: [{
-      kind: 'register-write',
-      register: instruction.register,
-      previous,
-      value,
-      source: 'addition',
-      sourceRegister: instruction.source,
+      kind: 'memory-write',
+      address,
+      previous: oldByte,
+      value: previous,
+      sourceRegister: instruction.register,
     }],
   }
 }
