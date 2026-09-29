@@ -11,10 +11,10 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Set the small-change and commit-as-you-go rule (`933e682`).
 - [x] Scaffold a runnable React and TypeScript page with Program, Machine, and Memory areas (`38f0b2d`).
 - [x] Set up fnm Node 24 and npm with a lockfile (`2ead793`).
+- [x] Add a deterministic machine state and the first `MOV` instruction, with tests.
 
 ## Next small steps
 
-- [ ] **Machine core, first instruction:** define the initial state and a pure `MOV` step. Specify register bounds and how `PC` advances. Verify that repeated runs from the same state give the same result.
 - [ ] **First visible step:** connect Step and Reset to that core. Show the active instruction and register values using a short `MOV` program. Keep the UI honest about which instructions work.
 - [ ] **Hex explorer:** show all 256 bytes in 16 rows with address and offset headings. Let a learner select a byte and see its hex, unsigned decimal, binary, and ASCII interpretations.
 - [ ] **First memory write:** add `STORE`, show the changed byte in the hex view, and explain a write such as decimal `65` becoming hex `41` and ASCII `A`.
@@ -30,6 +30,10 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - Explore a more controlled instruction editor if learners need it after trying the text editor.
 - Explore reverse stepping and a gradually more debugger-like interface.
 - Design a memory-mapped display and revisit the memory budget before attempting Conway's Game of Life.
+
+## Decisions so far
+
+The current machine uses zero-based instruction indices in `PC`. `MOV` accepts an unsigned byte (`0` through `255`), advances `PC` by one, and leaves `ZF`, `SP`, and memory unchanged. The empty downward-growing stack starts with `SP` one past the final byte, at `256`; its push behaviour will be defined when `PUSH` is implemented.
 
 ## Working rule
 
