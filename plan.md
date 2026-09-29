@@ -18,6 +18,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Add `HALT` and run the five-instruction sample end to end.
 - [x] Share instruction completion and register-write logic in the machine core.
 - [x] Use exhaustive instruction dispatch and one register validation path.
+- [x] Define the machine's 256-byte size once for the core and stack view.
 
 ## Next small steps
 

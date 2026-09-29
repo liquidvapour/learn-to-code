@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   createInitialState,
   executeInstruction,
+  MEMORY_SIZE,
   REGISTER_NAMES,
   type Instruction,
   type MachineEvent,
@@ -42,7 +43,7 @@ function App() {
 
   const { machine, lastEvent } = execution
   const hasNextInstruction = !machine.halted && machine.pc < program.length
-  const stackAddresses = Array.from({ length: 256 - machine.sp }, (_, offset) => machine.sp + offset)
+  const stackAddresses = Array.from({ length: MEMORY_SIZE - machine.sp }, (_, offset) => machine.sp + offset)
 
   function step() {
     setExecution((previous) => {
@@ -114,7 +115,7 @@ function App() {
         <section className="panel" aria-labelledby="memory-title">
           <h2 id="memory-title">Memory</h2>
           <p className="panel-note">The stack stores bytes in machine memory. The full hex explorer comes next.</p>
-          <p className="stack-pointer">SP: {hex(machine.sp)}{machine.sp === 256 ? ' (empty)' : ''}</p>
+          <p className="stack-pointer">SP: {hex(machine.sp)}{machine.sp === MEMORY_SIZE ? ' (empty)' : ''}</p>
           <h3>Stack <span>(top first)</span></h3>
           {stackAddresses.length === 0 ? (
             <p className="empty-stack">No values pushed yet.</p>

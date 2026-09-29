@@ -1,4 +1,6 @@
 export const REGISTER_NAMES = ['R0', 'R1', 'R2', 'R3'] as const
+export const MEMORY_SIZE = 256
+const MAX_BYTE = 0xff
 
 export type Register = (typeof REGISTER_NAMES)[number]
 
@@ -88,9 +90,9 @@ function unsupportedInstruction(instruction: never): never {
 export function createInitialState(): MachineState {
   return {
     registers: { R0: 0, R1: 0, R2: 0, R3: 0 },
-    memory: new Uint8Array(256),
+    memory: new Uint8Array(MEMORY_SIZE),
     pc: 0,
-    sp: 256,
+    sp: MEMORY_SIZE,
     zf: false,
     halted: false,
   }
@@ -103,13 +105,13 @@ export function executeInstruction(state: MachineState, instruction: Instruction
 
   switch (instruction.operation) {
     case 'MOV': {
-      if (!Number.isInteger(instruction.value) || instruction.value < 0 || instruction.value > 255) {
+      if (!Number.isInteger(instruction.value) || instruction.value < 0 || instruction.value > MAX_BYTE) {
         throw new RangeError('MOV value must be an integer from 0 to 255')
       }
       return writeRegister(state, instruction.register, instruction.value, { source: 'immediate' })
     }
     case 'ADD': {
-      const value = (readRegister(state, instruction.register) + readRegister(state, instruction.source)) & 0xff
+      const value = (readRegister(state, instruction.register) + readRegister(state, instruction.source)) & MAX_BYTE
       return writeRegister(
         state,
         instruction.register,
