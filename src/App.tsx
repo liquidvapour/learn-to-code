@@ -13,6 +13,7 @@ const program: readonly { source: string; instruction: Instruction }[] = [
   { source: 'MOV R1, 7', instruction: { operation: 'MOV', register: 'R1', value: 7 } },
   { source: 'ADD R0, R1', instruction: { operation: 'ADD', register: 'R0', source: 'R1' } },
   { source: 'PUSH R0', instruction: { operation: 'PUSH', register: 'R0' } },
+  { source: 'HALT', instruction: { operation: 'HALT' } },
 ]
 
 type ExecutionView = {
@@ -24,6 +25,15 @@ function hex(value: number, width = 2) {
   return `0x${value.toString(16).toUpperCase().padStart(width, '0')}`
 }
 
+function describeEvent(event: MachineEvent | null) {
+  if (event === null) return 'Press Step to execute the highlighted instruction.'
+  if (event.kind === 'halt') return 'HALT stopped execution. Reset to run again.'
+  if (event.kind === 'memory-write') {
+    return `${event.sourceRegister} → memory ${hex(event.address)}: ${event.value}`
+  }
+  return `${event.register}: ${event.previous} → ${event.value}`
+}
+
 function App() {
   const [execution, setExecution] = useState<ExecutionView>(() => ({
     machine: createInitialState(),
@@ -31,7 +41,7 @@ function App() {
   }))
 
   const { machine, lastEvent } = execution
-  const hasNextInstruction = machine.pc < program.length
+  const hasNextInstruction = !machine.halted && machine.pc < program.length
   const stackAddresses = Array.from({ length: 256 - machine.sp }, (_, offset) => machine.sp + offset)
 
   function step() {
@@ -78,7 +88,9 @@ function App() {
             <button type="button" className="secondary" onClick={reset}>Reset</button>
           </div>
           <p className="execution-status" aria-live="polite">
-            {hasNextInstruction ? `Next instruction: ${machine.pc}` : 'Program complete.'}
+            {machine.halted
+              ? 'Machine halted.'
+              : hasNextInstruction ? `Next instruction: ${machine.pc}` : 'Program complete.'}
           </p>
         </section>
 
@@ -95,11 +107,7 @@ function App() {
           </dl>
           <p className="flag-value">Zero flag (ZF): <strong>{machine.zf ? '1' : '0'}</strong></p>
           <p className="step-explanation" aria-live="polite">
-            {lastEvent === null
-              ? 'Press Step to execute the highlighted instruction.'
-              : lastEvent.kind === 'memory-write'
-                ? `${lastEvent.sourceRegister} → memory ${hex(lastEvent.address)}: ${lastEvent.value}`
-                : `${lastEvent.register}: ${lastEvent.previous} → ${lastEvent.value}`}
+            {describeEvent(lastEvent)}
           </p>
         </section>
 

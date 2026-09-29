@@ -15,10 +15,10 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Connect Step and Reset to a two-instruction `MOV` demo, with an active instruction marker and live register values.
 - [x] Add 8-bit `ADD`, show the zero flag, and extend the demo through the third instruction.
 - [x] Add `PUSH` and a stack view backed by machine memory.
+- [x] Add `HALT` and run the five-instruction sample end to end.
 
 ## Next small steps
 
-- [ ] **HALT:** add an explicit halted state and run the five-instruction sample end to end.
 - [ ] **Hex explorer:** show all 256 bytes in 16 rows with address and offset headings. Let a learner select a byte and see its hex, unsigned decimal, binary, and ASCII interpretations.
 - [ ] **First memory write:** add `STORE`, show the changed byte in the hex view, and explain a write such as decimal `65` becoming hex `41` and ASCII `A`.
 - [ ] **Editable program:** replace the fixed program display with a text editor. Parse and validate the supported instructions before execution, with clear line-specific errors. Reset execution when source changes.
@@ -40,6 +40,8 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 `ADD` stores the low 8 bits of the sum in its destination register and sets `ZF` when the stored result is zero.
 
 `PUSH` decrements `SP` before writing, so `SP` points at the top byte after a push. The empty stack has `SP = 256`, and a push at `SP = 0` overflows. Stack writes copy memory before changing it, leaving earlier machine states intact.
+
+`HALT` advances `PC` past itself and sets `halted`. Further execution is rejected until reset.
 
 ## Working rule
 

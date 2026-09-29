@@ -11,6 +11,7 @@ test('initial state has four zeroed registers and 256 zeroed bytes', () => {
   assert.equal(state.pc, 0)
   assert.equal(state.sp, 256)
   assert.equal(state.zf, false)
+  assert.equal(state.halted, false)
 })
 
 test('MOV changes one register and advances the instruction index without changing the input', () => {
@@ -112,4 +113,36 @@ test('PUSH rejects a full stack without changing memory', () => {
   )
   assert.equal(full.sp, 0)
   assert.equal(full.memory[0], 0)
+})
+
+test('the five-instruction sample produces 12 on the stack and then halts', () => {
+  const instructions = [
+    { operation: 'MOV', register: 'R0', value: 5 },
+    { operation: 'MOV', register: 'R1', value: 7 },
+    { operation: 'ADD', register: 'R0', source: 'R1' },
+    { operation: 'PUSH', register: 'R0' },
+    { operation: 'HALT' },
+  ]
+  const initial = createInitialState()
+  let current = initial
+  let lastEvent
+
+  for (const instruction of instructions) {
+    const result = executeInstruction(current, instruction)
+    current = result.state
+    lastEvent = result.events[0]
+  }
+
+  assert.equal(current.registers.R0, 12)
+  assert.equal(current.registers.R1, 7)
+  assert.equal(current.memory[255], 12)
+  assert.equal(current.sp, 255)
+  assert.equal(current.pc, 5)
+  assert.equal(current.halted, true)
+  assert.deepEqual(lastEvent, { kind: 'halt' })
+  assert.equal(initial.memory[255], 0)
+  assert.throws(
+    () => executeInstruction(current, { operation: 'MOV', register: 'R0', value: 1 }),
+    /Machine is halted/,
+  )
 })

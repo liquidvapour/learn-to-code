@@ -13,6 +13,8 @@ export type Instruction = Readonly<{
 }> | Readonly<{
   operation: 'PUSH'
   register: Register
+}> | Readonly<{
+  operation: 'HALT'
 }>
 
 export type MachineState = Readonly<{
@@ -21,6 +23,7 @@ export type MachineState = Readonly<{
   pc: number
   sp: number
   zf: boolean
+  halted: boolean
 }>
 
 export type MachineEvent = Readonly<{
@@ -42,6 +45,8 @@ export type MachineEvent = Readonly<{
   previous: number
   value: number
   sourceRegister: Register
+}> | Readonly<{
+  kind: 'halt'
 }>
 
 export type StepResult = Readonly<{
@@ -56,12 +61,24 @@ export function createInitialState(): MachineState {
     pc: 0,
     sp: 256,
     zf: false,
+    halted: false,
   }
 }
 
 export function executeInstruction(state: MachineState, instruction: Instruction): StepResult {
-  if (!['MOV', 'ADD', 'PUSH'].includes(instruction.operation)) {
+  if (state.halted) {
+    throw new Error('Machine is halted; reset before stepping again')
+  }
+
+  if (!['MOV', 'ADD', 'PUSH', 'HALT'].includes(instruction.operation)) {
     throw new Error(`Unsupported instruction: ${instruction.operation}`)
+  }
+
+  if (instruction.operation === 'HALT') {
+    return {
+      state: { ...state, pc: state.pc + 1, halted: true },
+      events: [{ kind: 'halt' }],
+    }
   }
 
   if (!REGISTER_NAMES.includes(instruction.register)) {
