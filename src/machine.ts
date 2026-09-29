@@ -60,6 +60,13 @@ function completeStep(state: MachineState, changes: Partial<MachineState>, event
   }
 }
 
+function readRegister(state: MachineState, register: Register): number {
+  if (!REGISTER_NAMES.includes(register)) {
+    throw new RangeError(`Unknown register: ${register}`)
+  }
+  return state.registers[register]
+}
+
 function writeRegister(
   state: MachineState,
   register: Register,
@@ -70,8 +77,12 @@ function writeRegister(
   return completeStep(
     state,
     { ...changes, registers: { ...state.registers, [register]: value } },
-    { kind: 'register-write', register, previous: state.registers[register], value, ...source },
+    { kind: 'register-write', register, previous: readRegister(state, register), value, ...source },
   )
+}
+
+function unsupportedInstruction(instruction: never): never {
+  throw new Error(`Unsupported instruction: ${(instruction as { operation: string }).operation}`)
 }
 
 export function createInitialState(): MachineState {
@@ -90,61 +101,45 @@ export function executeInstruction(state: MachineState, instruction: Instruction
     throw new Error('Machine is halted; reset before stepping again')
   }
 
-  if (!['MOV', 'ADD', 'PUSH', 'HALT'].includes(instruction.operation)) {
-    throw new Error(`Unsupported instruction: ${instruction.operation}`)
-  }
-
-  if (instruction.operation === 'HALT') {
-    return completeStep(state, { halted: true }, { kind: 'halt' })
-  }
-
-  if (!REGISTER_NAMES.includes(instruction.register)) {
-    throw new RangeError(`Unknown register: ${instruction.register}`)
-  }
-
-  const previous = state.registers[instruction.register]
-
-  if (instruction.operation === 'MOV') {
-    if (!Number.isInteger(instruction.value) || instruction.value < 0 || instruction.value > 255) {
-      throw new RangeError('MOV value must be an integer from 0 to 255')
+  switch (instruction.operation) {
+    case 'MOV': {
+      if (!Number.isInteger(instruction.value) || instruction.value < 0 || instruction.value > 255) {
+        throw new RangeError('MOV value must be an integer from 0 to 255')
+      }
+      return writeRegister(state, instruction.register, instruction.value, { source: 'immediate' })
     }
-
-    return writeRegister(state, instruction.register, instruction.value, { source: 'immediate' })
-  }
-
-  if (instruction.operation === 'ADD') {
-    if (!REGISTER_NAMES.includes(instruction.source)) {
-      throw new RangeError(`Unknown register: ${instruction.source}`)
+    case 'ADD': {
+      const value = (readRegister(state, instruction.register) + readRegister(state, instruction.source)) & 0xff
+      return writeRegister(
+        state,
+        instruction.register,
+        value,
+        { source: 'addition', sourceRegister: instruction.source },
+        { zf: value === 0 },
+      )
     }
+    case 'PUSH': {
+      const value = readRegister(state, instruction.register)
+      if (state.sp === 0) {
+        throw new RangeError('Stack overflow: no memory remains for PUSH')
+      }
 
-    const value = (previous + state.registers[instruction.source]) & 0xff
-    return writeRegister(
-      state,
-      instruction.register,
-      value,
-      { source: 'addition', sourceRegister: instruction.source },
-      { zf: value === 0 },
-    )
+      const address = state.sp - 1
+      const memory = state.memory.slice()
+      const previous = memory[address]
+      memory[address] = value
+
+      return completeStep(state, { memory, sp: address }, {
+        kind: 'memory-write',
+        address,
+        previous,
+        value,
+        sourceRegister: instruction.register,
+      })
+    }
+    case 'HALT':
+      return completeStep(state, { halted: true }, { kind: 'halt' })
+    default:
+      return unsupportedInstruction(instruction)
   }
-
-  if (state.sp === 0) {
-    throw new RangeError('Stack overflow: no memory remains for PUSH')
-  }
-
-  const address = state.sp - 1
-  const memory = state.memory.slice()
-  const oldByte = memory[address]
-  memory[address] = previous
-
-  return completeStep(
-    state,
-    { memory, sp: address },
-    {
-      kind: 'memory-write',
-      address,
-      previous: oldByte,
-      value: previous,
-      sourceRegister: instruction.register,
-    },
-  )
 }

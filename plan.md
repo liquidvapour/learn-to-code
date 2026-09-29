@@ -17,6 +17,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Add `PUSH` and a stack view backed by machine memory.
 - [x] Add `HALT` and run the five-instruction sample end to end.
 - [x] Share instruction completion and register-write logic in the machine core.
+- [x] Use exhaustive instruction dispatch and one register validation path.
 
 ## Next small steps
 
