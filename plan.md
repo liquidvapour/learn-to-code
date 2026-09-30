@@ -19,19 +19,19 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Share instruction completion and register-write logic in the machine core.
 - [x] Use exhaustive instruction dispatch and one register validation path.
 - [x] Define the machine's 256-byte size once for the core and stack view.
+- [x] Show memory as a 16-by-16 hex grid with an ASCII view (`e8c8eb3`).
 
 ## Next small steps
 
-- [ ] **Hex grid:** show all 256 bytes in 16 rows with address and offset headings, plus an aligned ASCII view.
-- [ ] **Byte inspector:** let a learner select a memory byte and see its address, hex, unsigned decimal, binary, and ASCII interpretations.
-- [ ] **First memory write:** add `STORE`, show the changed byte in the hex view, and explain a write such as decimal `65` becoming hex `41` and ASCII `A`.
 - [ ] **Editable program:** replace the fixed program display with a text editor. Parse and validate the supported instructions before execution, with clear line-specific errors. Reset execution when source changes.
+- [ ] **First memory write:** add `STORE`, show the changed byte in the hex view, and explain a write such as decimal `65` becoming hex `41` and ASCII `A`.
+- [ ] **Expand the instruction set:** add `LOAD`, `SUB`, `CMP`, jumps, calls, and returns. Resolve the memory map, overflow, flags, stack rules, addressing, and faults as each operation becomes relevant.
 - [ ] **Continuous execution:** add Run/Pause and a speed control while preserving the same step behaviour.
 - [ ] **Movement cues:** use execution events to highlight reads and writes, then add optional motion that can be reduced or disabled.
+- [ ] **Byte inspector:** let a learner select a memory byte and see its address, hex, unsigned decimal, binary, and ASCII interpretations.
 
 ## Later milestones
 
-- Expand the instruction set with `LOAD`, `SUB`, `CMP`, jumps, calls, and returns. Resolve the memory map, overflow, flags, stack rules, addressing, and faults as each operation becomes relevant.
 - Add short exercises and example programs that teach variables, control flow, and functions.
 - Explore a more controlled instruction editor if learners need it after trying the text editor.
 - Explore reverse stepping and a gradually more debugger-like interface.
