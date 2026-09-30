@@ -24,8 +24,14 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 ## Next small steps
 
 - [ ] **Editable program:** replace the fixed program display with a text editor. Parse and validate the supported instructions before execution, with clear line-specific errors. Reset execution when source changes.
-- [ ] **First memory write:** add `STORE`, show the changed byte in the hex view, and explain a write such as decimal `65` becoming hex `41` and ASCII `A`.
-- [ ] **Expand the instruction set:** add `LOAD`, `SUB`, `CMP`, jumps, calls, and returns. Resolve the memory map, overflow, flags, stack rules, addressing, and faults as each operation becomes relevant.
+- [ ] **`STORE`:** copy a register byte to a specified memory address. Use it to explain decimal `65`, hex `41`, binary `0100 0001`, and ASCII `A` as views of one byte.
+- [ ] **`LOAD`:** copy a byte from a specified memory address into a register. Highlight the source memory cell and destination register.
+- [ ] **`SUB`:** add 8-bit subtraction, define its wraparound behaviour, and decide whether it updates `ZF`.
+- [ ] **`CMP`:** compare two registers without changing them, then define precisely how it sets `ZF`.
+- [ ] **`JMP` and `JZ`:** introduce instruction addresses and conditional control flow. Define valid jump targets and show where control moves.
+- [ ] **`POP`:** remove the top byte from the downward-growing stack into a register. Define empty-stack behaviour.
+- [ ] **`CALL` and `RET`:** use the stack for return addresses, define address representation and stack-overflow/underflow faults, then show calls and returns in the program view.
+- [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
 - [ ] **Continuous execution:** add Run/Pause and a speed control while preserving the same step behaviour.
 - [ ] **Movement cues:** use execution events to highlight reads and writes, then add optional motion that can be reduced or disabled.
 - [ ] **Byte inspector:** let a learner select a memory byte and see its address, hex, unsigned decimal, binary, and ASCII interpretations.
