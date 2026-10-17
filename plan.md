@@ -24,7 +24,9 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
-- [ ] **Editable program:** replace the fixed program display with a text editor. Parse and validate the supported instructions before execution, with clear line-specific errors. Reset execution when source changes.
+- [ ] **Editable program:**
+  - [x] Parse the supported instructions, preserving source line numbers and reporting validation errors; test valid and invalid programs.
+  - [ ] Connect a text editor, syntax reference, and errors to execution; reset on edits and offer sample restoration.
 - [ ] **`STORE`:** copy a register byte to a specified memory address. Use it to explain decimal `65`, hex `41`, binary `0100 0001`, and ASCII `A` as views of one byte.
 - [ ] **`LOAD`:** copy a byte from a specified memory address into a register. Highlight the source memory cell and destination register.
 - [ ] **`SUB`:** add 8-bit subtraction, define its wraparound behaviour, and decide whether it updates `ZF`.
