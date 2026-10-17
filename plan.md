@@ -9,6 +9,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Capture the teaching goal, tiny instruction set, and prototype scope (`31f4f44`).
 - [x] Record the technical design, including the hex memory explorer and editable text program (`31f4f44`).
 - [x] Set the small-change and commit-as-you-go rule (`933e682`).
+- [x] Update the working rule to leave each completed step staged with a suggested commit message, without creating commits.
 - [x] Scaffold a runnable React and TypeScript page with Program, Machine, and Memory areas (`38f0b2d`).
 - [x] Set up fnm Node 24 and npm with a lockfile (`2ead793`).
 - [x] Add a deterministic machine state and the first `MOV` instruction, with tests.
@@ -60,4 +61,4 @@ Program source accepts case-insensitive instructions and registers, flexible whi
 
 ## Working rule
 
-As each small step lands, mark it complete here in the same commit, add any decision we learned, and split the next broad item if it is now close enough to implement. The plan can change as the prototype teaches us what works.
+As each small step is completed, mark it complete here alongside its changes, add any decision we learned, and split the next broad item if it is now close enough to implement. Check and stage the step, then stop with a suggested commit message for the user; do not create a commit. The plan can change as the prototype teaches us what works.
