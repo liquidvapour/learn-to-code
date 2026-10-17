@@ -4,18 +4,11 @@ import {
   executeInstruction,
   MEMORY_SIZE,
   REGISTER_NAMES,
-  type Instruction,
   type MachineEvent,
   type MachineState,
 } from './machine'
 
-const program: readonly { source: string; instruction: Instruction }[] = [
-  { source: 'MOV R0, 5', instruction: { operation: 'MOV', register: 'R0', value: 5 } },
-  { source: 'MOV R1, 7', instruction: { operation: 'MOV', register: 'R1', value: 7 } },
-  { source: 'ADD R0, R1', instruction: { operation: 'ADD', register: 'R0', source: 'R1' } },
-  { source: 'PUSH R0', instruction: { operation: 'PUSH', register: 'R0' } },
-  { source: 'HALT', instruction: { operation: 'HALT' } },
-]
+import { parseProgram, SAMPLE_SOURCE } from './program'
 
 const BYTES_PER_ROW = 16
 const memoryRows = Array.from({ length: MEMORY_SIZE / BYTES_PER_ROW }, (_, row) => row * BYTES_PER_ROW)
@@ -43,17 +36,20 @@ function describeEvent(event: MachineEvent | null) {
 }
 
 function App() {
+  const [source, setSource] = useState(SAMPLE_SOURCE)
+  const { program, errors } = parseProgram(source)
   const [execution, setExecution] = useState<ExecutionView>(() => ({
     machine: createInitialState(),
     lastEvent: null,
   }))
 
   const { machine, lastEvent } = execution
-  const hasNextInstruction = !machine.halted && machine.pc < program.length
+  const hasNextInstruction = errors.length === 0 && !machine.halted && machine.pc < program.length
   const stackAddresses = Array.from({ length: MEMORY_SIZE - machine.sp }, (_, offset) => machine.sp + offset)
 
   function step() {
     setExecution((previous) => {
+      if (errors.length || previous.machine.halted) return previous
       const next = program[previous.machine.pc]
       if (!next) return previous
 
@@ -64,6 +60,11 @@ function App() {
 
   function reset() {
     setExecution({ machine: createInitialState(), lastEvent: null })
+  }
+
+  function editSource(value: string) {
+    setSource(value)
+    reset()
   }
 
   return (
@@ -77,28 +78,51 @@ function App() {
       <div className="workspace" aria-label="Tiny Machine workspace">
         <section className="panel" aria-labelledby="program-title">
           <h2 id="program-title">Program</h2>
-          <p className="panel-note">A fixed demo. Text editing comes later.</p>
-          <ol className="program-list">
+          <p className="panel-note" id="editor-help">One instruction per line. Editing resets the machine; Reset keeps your text.</p>
+          <label className="editor-label" htmlFor="program-source">Program source</label>
+          <textarea
+            id="program-source"
+            className="program-editor"
+            value={source}
+            onChange={(event) => editSource(event.target.value)}
+            rows={8}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-describedby="editor-help syntax-help program-errors"
+            aria-invalid={errors.length > 0}
+          />
+          <p className="syntax-help" id="syntax-help">
+            Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>PUSH R0</code> · <code>HALT</code>.
+            {' '}Registers: R0–R3. MOV values: decimal 0–255. Case and spacing are flexible; blank lines are skipped.
+          </p>
+          <div id="program-errors" className="program-errors" aria-live="polite">
+            {errors.length > 0 && <ul>{errors.map((error) => (
+              <li key={error.lineNumber}>Line {error.lineNumber}: {error.message}</li>
+            ))}</ul>}
+          </div>
+          <ol className="program-list" aria-label="Parsed instructions with source line numbers">
             {program.map((line, index) => (
               <li
                 key={index}
-                className={index === machine.pc ? 'program-line active' : 'program-line'}
-                aria-current={index === machine.pc ? 'step' : undefined}
+                className={hasNextInstruction && index === machine.pc ? 'program-line active' : 'program-line'}
+                aria-current={hasNextInstruction && index === machine.pc ? 'step' : undefined}
               >
-                <span className="line-number">{index + 1}</span>
+                <span className="line-number">{line.lineNumber}</span>
                 <code>{line.source}</code>
-                {index === machine.pc && <span className="next-marker">Next</span>}
+                {hasNextInstruction && index === machine.pc && <span className="next-marker">Next</span>}
               </li>
             ))}
           </ol>
           <div className="controls">
             <button type="button" onClick={step} disabled={!hasNextInstruction}>Step</button>
             <button type="button" className="secondary" onClick={reset}>Reset</button>
+            <button type="button" className="secondary" onClick={() => editSource(SAMPLE_SOURCE)}>Restore sample</button>
           </div>
           <p className="execution-status" aria-live="polite">
-            {machine.halted
+            {errors.length > 0 ? 'Fix the source errors before stepping.' : machine.halted
               ? 'Machine halted.'
-              : hasNextInstruction ? `Next instruction: ${machine.pc}` : 'Program complete.'}
+              : hasNextInstruction ? `Next: line ${program[machine.pc].lineNumber} (PC ${machine.pc})` : program.length === 0 ? 'Enter an instruction to begin.' : 'Program complete.'}
           </p>
         </section>
 

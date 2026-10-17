@@ -101,6 +101,7 @@ h1 {
 
 .controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
@@ -310,4 +311,44 @@ button:focus-visible {
   .panel {
     min-height: 240px;
   }
+}
+
+.editor-label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.program-editor {
+  width: 100%;
+  resize: vertical;
+  min-height: 10rem;
+  padding: 0.75rem;
+  border: 1px solid #556775;
+  border-radius: 8px;
+  background: #10151b;
+  color: #e6edf3;
+  font: 1rem/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.program-editor:focus-visible {
+  outline: 3px solid #80c7bd;
+  outline-offset: 2px;
+}
+
+.program-editor[aria-invalid="true"] {
+  border-color: #ffb4a9;
+}
+
+.syntax-help {
+  color: #9ba9b6;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.program-errors {
+  color: #ffb4a9;
+}
+
+.program-errors ul {
+  padding-left: 1.25rem;
 }

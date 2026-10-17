@@ -21,13 +21,13 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Define the machine's 256-byte size once for the core and stack view.
 - [x] Show memory as a 16-by-16 hex grid with an ASCII view (`e8c8eb3`).
 - [x] Highlight occupied stack bytes and the top at `SP` in memory, show used and remaining capacity, and keep a stack close-up.
+- [x] Add an editable program with whole-program validation, source line errors, reset on edits, and sample restoration.
 
 ## Next small steps
 
-- [ ] **Editable program:**
-  - [x] Parse the supported instructions, preserving source line numbers and reporting validation errors; test valid and invalid programs.
-  - [ ] Connect a text editor, syntax reference, and errors to execution; reset on edits and offer sample restoration.
-- [ ] **`STORE`:** copy a register byte to a specified memory address. Use it to explain decimal `65`, hex `41`, binary `0100 0001`, and ASCII `A` as views of one byte.
+- [ ] **`STORE`:**
+  - [ ] Add a register-to-memory write with byte-address validation, execution events, and core tests.
+  - [ ] Parse `STORE register, address`, document its syntax, and demonstrate decimal `65` appearing as hex `41` and ASCII `A`.
 - [ ] **`LOAD`:** copy a byte from a specified memory address into a register. Highlight the source memory cell and destination register.
 - [ ] **`SUB`:** add 8-bit subtraction, define its wraparound behaviour, and decide whether it updates `ZF`.
 - [ ] **`CMP`:** compare two registers without changing them, then define precisely how it sets `ZF`.
@@ -55,6 +55,8 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 `PUSH` decrements `SP` before writing, so `SP` points at the top byte after a push. The empty stack has `SP = 256`, and a push at `SP = 0` overflows. Stack writes copy memory before changing it, leaving earlier machine states intact.
 
 `HALT` advances `PC` past itself and sets `halted`. Further execution is rejected until reset.
+
+Program source accepts case-insensitive instructions and registers, flexible whitespace, and blank lines. `MOV` immediates are decimal integers from 0 to 255. Any parse error blocks the whole program. Source line numbers stay separate from zero-based `PC`; editing resets execution, while Reset preserves source.
 
 ## Working rule
 

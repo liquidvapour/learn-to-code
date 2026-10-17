@@ -1,6 +1,6 @@
 # Tiny Machine
 
-A browser-based visual computer for learning how instructions change registers, memory, and the stack. The current page steps through a five-instruction sample with **Step** and **Reset**. See [the technical design](technical-design.md) for the planned editor and hex explorer.
+A browser-based visual computer for learning how instructions change registers, memory, and the stack. Edit a program using `MOV`, `ADD`, `PUSH`, and `HALT`, then execute it with **Step**. Source errors show their line numbers and block execution. Editing resets the machine; **Reset** keeps your text, and **Restore sample** brings back the five-instruction demo. The memory hex grid and stack close-up show the same bytes. See [the technical design](technical-design.md) for upcoming features.
 
 ## Run locally
 
