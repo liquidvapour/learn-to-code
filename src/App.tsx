@@ -122,6 +122,14 @@ function App() {
         <section className="panel" aria-labelledby="memory-title">
           <h2 id="memory-title">Memory</h2>
           <p className="panel-note">All 256 memory bytes, shown in hexadecimal. The stack below is another view of this same memory.</p>
+          <p className="stack-usage" aria-live="polite">
+            Stack: {stackAddresses.length} {stackAddresses.length === 1 ? 'byte' : 'bytes'} used · {machine.sp} bytes remaining
+          </p>
+          <div className="memory-legend">
+            <span><span className="legend-swatch stack-used" aria-hidden="true" /> Occupied stack</span>
+            <span><span className="legend-swatch stack-top" aria-hidden="true" /> SP: top of stack</span>
+          </div>
+          <p className="panel-note">The stack grows toward lower addresses: 0xFF, 0xFE, 0xFD…</p>
           <div className="memory-grid" role="region" aria-label="Memory hex grid" tabIndex={0}>
             <table>
               <thead>
@@ -138,8 +146,20 @@ function App() {
                   <tr key={startAddress}>
                     <th scope="row">{hex(startAddress)}</th>
                     {Array.from({ length: BYTES_PER_ROW }, (_, offset) => {
-                      const value = machine.memory[startAddress + offset]
-                      return <td key={offset}>{value.toString(16).toUpperCase().padStart(2, '0')}</td>
+                      const address = startAddress + offset
+                      const value = machine.memory[address]
+                      const isStack = address >= machine.sp
+                      const isTop = address === machine.sp
+                      return (
+                        <td
+                          key={offset}
+                          className={isStack ? `stack-used${isTop ? ' stack-top' : ''}` : undefined}
+                          aria-label={`${hex(address)}: ${hex(value)}${isTop ? ', SP, top of stack' : isStack ? ', occupied stack' : ''}`}
+                        >
+                          {value.toString(16).toUpperCase().padStart(2, '0')}
+                          {isTop && <span className="stack-top-label">SP</span>}
+                        </td>
+                      )
                     })}
                     <td className="ascii-view">
                       {Array.from({ length: BYTES_PER_ROW }, (_, offset) => asciiCharacter(machine.memory[startAddress + offset])).join('')}
@@ -149,8 +169,8 @@ function App() {
               </tbody>
             </table>
           </div>
-          <p className="stack-pointer">SP: {hex(machine.sp)}{machine.sp === MEMORY_SIZE ? ' (empty)' : ''}</p>
-          <h3>Stack <span>(top first)</span></h3>
+          <p className="stack-pointer">SP: {hex(machine.sp)}{machine.sp === MEMORY_SIZE ? ' (empty; just past the end of memory)' : ' (top of stack)'}</p>
+          <h3>Stack close-up <span>(top first)</span></h3>
           {stackAddresses.length === 0 ? (
             <p className="empty-stack">No values pushed yet.</p>
           ) : (

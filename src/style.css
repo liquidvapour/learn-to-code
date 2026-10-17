@@ -233,6 +233,46 @@ button:focus-visible {
   text-align: left;
 }
 
+.stack-usage {
+  color: #b9e1d8;
+}
+
+.memory-legend,
+.memory-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.memory-legend {
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.stack-used {
+  background: #294846;
+  color: #d5fff6;
+}
+
+.stack-top {
+  outline: 2px solid #a9ebe1;
+  outline-offset: -2px;
+}
+
+.stack-top-label {
+  display: block;
+  color: #a9ebe1;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
 .panel h3 {
   margin: 1.5rem 0 0.5rem;
   font-size: 1rem;

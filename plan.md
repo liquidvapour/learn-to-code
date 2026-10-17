@@ -20,6 +20,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Use exhaustive instruction dispatch and one register validation path.
 - [x] Define the machine's 256-byte size once for the core and stack view.
 - [x] Show memory as a 16-by-16 hex grid with an ASCII view (`e8c8eb3`).
+- [x] Highlight occupied stack bytes and the top at `SP` in memory, show used and remaining capacity, and keep a stack close-up.
 
 ## Next small steps
 
