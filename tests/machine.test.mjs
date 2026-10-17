@@ -103,6 +103,55 @@ test('PUSH writes a register byte to memory and moves the stack pointer down', (
   }])
 })
 
+test('STORE overwrites one addressed byte, preserves other state, and reports the write', () => {
+  const initial = createInitialState()
+  const state = {
+    ...initial,
+    registers: { ...initial.registers, R2: 65 },
+    pc: 3,
+    sp: 250,
+    zf: true,
+  }
+  state.memory[42] = 9
+  state.memory[43] = 17
+  const instruction = { operation: 'STORE', register: 'R2', address: 42 }
+  const result = executeInstruction(state, instruction)
+
+  assert.deepEqual(result, executeInstruction(state, instruction))
+  assert.notEqual(result.state.memory, state.memory)
+  const expectedMemory = state.memory.slice()
+  expectedMemory[42] = 65
+  assert.deepEqual(result.state, { ...state, memory: expectedMemory, pc: 4 })
+  assert.equal(state.memory[42], 9)
+  assert.equal(state.pc, 3)
+  assert.deepEqual(result.events, [{
+    kind: 'memory-write', address: 42, previous: 9, value: 65, sourceRegister: 'R2',
+  }])
+})
+
+test('STORE accepts address endpoints and rejects invalid addresses and registers', () => {
+  const initial = createInitialState()
+  const state = { ...initial, registers: { ...initial.registers, R0: 255 } }
+
+  for (const address of [0, 255]) {
+    const result = executeInstruction(state, { operation: 'STORE', register: 'R0', address })
+    assert.equal(result.state.memory[address], 255)
+    assert.equal(result.state.sp, 256)
+  }
+  for (const address of [-1, 256, 1.5, Number.NaN, Infinity]) {
+    assert.throws(
+      () => executeInstruction(state, { operation: 'STORE', register: 'R0', address }),
+      /STORE address must be an integer from 0 to 255/,
+    )
+  }
+  assert.throws(
+    () => executeInstruction(state, { operation: 'STORE', register: 'R4', address: 0 }),
+    /Unknown register/,
+  )
+  assert.equal(state.memory.every((byte) => byte === 0), true)
+  assert.equal(state.pc, 0)
+})
+
 test('PUSH rejects a full stack without changing memory', () => {
   const initial = createInitialState()
   const full = { ...initial, sp: 0 }

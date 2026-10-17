@@ -16,6 +16,10 @@ export type Instruction = Readonly<{
   operation: 'PUSH'
   register: Register
 }> | Readonly<{
+  operation: 'STORE'
+  register: Register
+  address: number
+}> | Readonly<{
   operation: 'HALT'
 }>
 
@@ -119,6 +123,24 @@ export function executeInstruction(state: MachineState, instruction: Instruction
         { source: 'addition', sourceRegister: instruction.source },
         { zf: value === 0 },
       )
+    }
+    case 'STORE': {
+      const { address } = instruction
+      if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
+        throw new RangeError('STORE address must be an integer from 0 to 255')
+      }
+      const value = readRegister(state, instruction.register)
+      const memory = state.memory.slice()
+      const previous = memory[address]
+      memory[address] = value
+
+      return completeStep(state, { memory }, {
+        kind: 'memory-write',
+        address,
+        previous,
+        value,
+        sourceRegister: instruction.register,
+      })
     }
     case 'PUSH': {
       const value = readRegister(state, instruction.register)

@@ -27,7 +27,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 ## Next small steps
 
 - [ ] **`STORE`:**
-  - [ ] Add a register-to-memory write with byte-address validation, execution events, and core tests.
+  - [x] Add a register-to-memory write with byte-address validation, execution events, and core tests.
   - [ ] Parse `STORE register, address`, document its syntax, and demonstrate decimal `65` appearing as hex `41` and ASCII `A`.
 - [ ] **`LOAD`:** copy a byte from a specified memory address into a register. Highlight the source memory cell and destination register.
 - [ ] **`SUB`:** add 8-bit subtraction, define its wraparound behaviour, and decide whether it updates `ZF`.
@@ -56,6 +56,8 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 `PUSH` decrements `SP` before writing, so `SP` points at the top byte after a push. The empty stack has `SP = 256`, and a push at `SP = 0` overflows. Stack writes copy memory before changing it, leaving earlier machine states intact.
 
 `HALT` advances `PC` past itself and sets `halted`. Further execution is rejected until reset.
+
+`STORE` copies a register byte to an integer memory address from 0 through 255, advances `PC`, and emits a memory-write event containing the previous byte. It copies memory before writing and preserves registers, `SP`, and `ZF`. Any memory byte is addressable, including stack bytes; source parsing and the demo come next.
 
 Program source accepts case-insensitive instructions and registers, flexible whitespace, and blank lines. `MOV` immediates are decimal integers from 0 to 255. Any parse error blocks the whole program. Source line numbers stay separate from zero-based `PC`; editing resets execution, while Reset preserves source.
 
