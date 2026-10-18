@@ -26,10 +26,15 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
-- [ ] **`STORE`:**
+- [x] Add an in-app instruction reference page covering all supported instructions, examples, machine state, and source rules; keep README focused on project setup.
+
+- [x] **`STORE`:**
   - [x] Add a register-to-memory write with byte-address validation, execution events, and core tests.
-  - [ ] Parse `STORE register, address`, document its syntax, and demonstrate decimal `65` appearing as hex `41` and ASCII `A`.
-- [ ] **`LOAD`:** copy a byte from a specified memory address into a register. Highlight the source memory cell and destination register.
+  - [x] Parse `STORE register, address`, document its syntax, and demonstrate decimal `65` appearing as hex `41` and ASCII `A`.
+- [ ] **`LOAD`:**
+  - [ ] Add memory-to-register execution with byte-address validation, a source-address execution event, and core tests; preserve `SP` and `ZF`.
+  - [ ] Parse `LOAD register, address`, document decimal addresses, and extend the sample to read back the stored byte.
+  - [ ] Highlight the source memory cell and destination register after a load.
 - [ ] **`SUB`:** add 8-bit subtraction, define its wraparound behaviour, and decide whether it updates `ZF`.
 - [ ] **`CMP`:** compare two registers without changing them, then define precisely how it sets `ZF`.
 - [ ] **`JMP` and `JZ`:** introduce instruction addresses and conditional control flow. Define valid jump targets and show where control moves.
@@ -57,7 +62,7 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 
 `HALT` advances `PC` past itself and sets `halted`. Further execution is rejected until reset.
 
-`STORE` copies a register byte to an integer memory address from 0 through 255, advances `PC`, and emits a memory-write event containing the previous byte. It copies memory before writing and preserves registers, `SP`, and `ZF`. Any memory byte is addressable, including stack bytes; source parsing and the demo come next.
+`STORE` copies a register byte to an integer memory address from 0 through 255, advances `PC`, and emits a memory-write event containing the previous byte. It copies memory before writing and preserves registers, `SP`, and `ZF`. Any memory byte is addressable, including stack bytes. Source syntax is `STORE register, address`, with decimal addresses from 0 through 255. The sample writes decimal 65 to address 0, shown as hex `41` and ASCII `A`.
 
 Program source accepts case-insensitive instructions and registers, flexible whitespace, and blank lines. `MOV` immediates are decimal integers from 0 to 255. Any parse error blocks the whole program. Source line numbers stay separate from zero-based `PC`; editing resets execution, while Reset preserves source.
 

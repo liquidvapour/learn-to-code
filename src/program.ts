@@ -1,6 +1,6 @@
 import { REGISTER_NAMES, type Instruction, type Register } from './machine.ts'
 
-export const SAMPLE_SOURCE = 'MOV R0, 5\nMOV R1, 7\nADD R0, R1\nPUSH R0\nHALT'
+export const SAMPLE_SOURCE = 'MOV R0, 5\nMOV R1, 7\nADD R0, R1\nPUSH R0\nMOV R2, 65\nSTORE R2, 0\nHALT'
 
 type ProgramLine = { source: string; lineNumber: number; instruction: Instruction }
 type ProgramError = { lineNumber: number; message: string }
@@ -22,19 +22,22 @@ export function parseProgram(source: string): { program: ProgramLine[]; errors: 
       let instruction: Instruction
       switch (operation) {
         case 'MOV':
+        case 'STORE':
         case 'ADD': {
           const parts = operands.split(',').map((part) => part.trim())
           if (parts.length !== 2 || parts.some((part) => !part)) {
-            throw new Error(`Use ${operation} register, ${operation === 'MOV' ? 'byte' : 'register'}.`)
+            throw new Error(`Use ${operation} register, ${operation === 'MOV' ? 'byte' : operation === 'STORE' ? 'address' : 'register'}.`)
           }
           const destination = register(parts[0])
           if (operation === 'ADD') {
             instruction = { operation, register: destination, source: register(parts[1]) }
           } else {
             if (!/^\d+$/.test(parts[1]) || Number(parts[1]) > 255) {
-              throw new Error('MOV value must be a decimal integer from 0 to 255.')
+              throw new Error(`${operation === 'STORE' ? 'STORE address' : 'MOV value'} must be a decimal integer from 0 to 255.`)
             }
-            instruction = { operation, register: destination, value: Number(parts[1]) }
+            instruction = operation === 'STORE'
+              ? { operation, register: destination, address: Number(parts[1]) }
+              : { operation, register: destination, value: Number(parts[1]) }
           }
           break
         }
@@ -47,7 +50,7 @@ export function parseProgram(source: string): { program: ProgramLine[]; errors: 
           instruction = { operation }
           break
         default:
-          throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, PUSH, or HALT.`)
+          throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, STORE, PUSH, or HALT.`)
       }
       program.push({ source: sourceLine.trim(), lineNumber, instruction })
     } catch (error) {

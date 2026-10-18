@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import InstructionDocs from './InstructionDocs'
 import {
   createInitialState,
   executeInstruction,
@@ -36,6 +37,17 @@ function describeEvent(event: MachineEvent | null) {
 }
 
 function App() {
+  const [showDocs, setShowDocs] = useState(() => window.location.hash === '#instructions')
+  useEffect(() => {
+    function navigate() {
+      setShowDocs(window.location.hash === '#instructions')
+    }
+    window.addEventListener('hashchange', navigate)
+    return () => window.removeEventListener('hashchange', navigate)
+  }, [])
+  useEffect(() => {
+    document.title = showDocs ? 'Instruction reference · Tiny Machine' : 'Tiny Machine'
+  }, [showDocs])
   const [source, setSource] = useState(SAMPLE_SOURCE)
   const { program, errors } = parseProgram(source)
   const [execution, setExecution] = useState<ExecutionView>(() => ({
@@ -71,11 +83,16 @@ function App() {
     <main className="page">
       <header className="page-header">
         <span className="eyebrow">A visual computer for learning</span>
-        <h1>Tiny Machine</h1>
-        <p>Step through a tiny program and watch the machine change.</p>
+        <h1>{showDocs ? 'Instruction reference' : 'Tiny Machine'}</h1>
+        <p>{showDocs ? 'Syntax, examples, and effects for every supported instruction.' : 'Step through a tiny program and watch the machine change.'}</p>
+        <nav className="page-nav" aria-label="Main navigation">
+          <a href="#machine" aria-current={!showDocs ? 'page' : undefined}>Machine</a>
+          <a href="#instructions" aria-current={showDocs ? 'page' : undefined}>Instruction reference</a>
+        </nav>
       </header>
 
-      <div className="workspace" aria-label="Tiny Machine workspace">
+      {showDocs && <InstructionDocs />}
+      <div className="workspace" aria-label="Tiny Machine workspace" hidden={showDocs}>
         <section className="panel" aria-labelledby="program-title">
           <h2 id="program-title">Program</h2>
           <p className="panel-note" id="editor-help">One instruction per line. Editing resets the machine; Reset keeps your text.</p>
@@ -93,9 +110,11 @@ function App() {
             aria-invalid={errors.length > 0}
           />
           <p className="syntax-help" id="syntax-help">
-            Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>PUSH R0</code> · <code>HALT</code>.
-            {' '}Registers: R0–R3. MOV values: decimal 0–255. Case and spacing are flexible; blank lines are skipped.
+            Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>STORE R2, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
+            {' '}Registers: R0–R3. MOV values and STORE addresses: decimal 0–255. Case and spacing are flexible; blank lines are skipped.
+            {' '}<a href="#instructions">Full instruction reference</a>.
           </p>
+          <p className="panel-note">The sample stores decimal 65 at address 0: look for hex 41 and ASCII A in the first memory row.</p>
           <div id="program-errors" className="program-errors" aria-live="polite">
             {errors.length > 0 && <ul>{errors.map((error) => (
               <li key={error.lineNumber}>Line {error.lineNumber}: {error.message}</li>
