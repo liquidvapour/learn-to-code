@@ -26,7 +26,9 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
+- [x] Add a Markdown development reference for all supported and planned instructions, including open semantic decisions.
 - [x] Add an in-app instruction reference page covering all supported instructions, examples, machine state, and source rules; keep README focused on project setup.
+- [x] Set up VS Code Test Explorer for the built-in `node:test` suite.
 
 - [x] **`STORE`:**
   - [x] Add a register-to-memory write with byte-address validation, execution events, and core tests.

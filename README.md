@@ -4,6 +4,8 @@ A browser-based visual computer for learning how instructions change registers, 
 
 Open **Instruction reference** in the app for syntax, examples, and machine behavior for every supported instruction.
 
+For development, see [the complete instruction reference](instruction-reference.md) for supported and planned instructions, execution rules, and unresolved design decisions.
+
 ## Run locally
 
 With [fnm](https://github.com/Schniz/fnm) installed:

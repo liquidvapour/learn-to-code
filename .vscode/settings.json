@@ -1,0 +1,5 @@
+{
+    "nodejs-testing.include": [
+        "tests"
+    ]
+}
