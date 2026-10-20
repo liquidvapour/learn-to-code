@@ -23,10 +23,11 @@ export function parseProgram(source: string): { program: ProgramLine[]; errors: 
       switch (operation) {
         case 'MOV':
         case 'STORE':
+        case 'LOAD':
         case 'ADD': {
           const parts = operands.split(',').map((part) => part.trim())
           if (parts.length !== 2 || parts.some((part) => !part)) {
-            throw new Error(`Use ${operation} register, ${operation === 'MOV' ? 'byte' : operation === 'STORE' ? 'address' : 'register'}.`)
+            throw new Error(`Use ${operation} register, ${operation === 'MOV' ? 'byte' : operation === 'STORE' || operation === 'LOAD' ? 'address' : 'register'}.`)
           }
           const destination = register(parts[0])
           if (operation === 'ADD') {
@@ -35,7 +36,7 @@ export function parseProgram(source: string): { program: ProgramLine[]; errors: 
             if (!/^\d+$/.test(parts[1]) || Number(parts[1]) > 255) {
               throw new Error(`${operation === 'STORE' ? 'STORE address' : 'MOV value'} must be a decimal integer from 0 to 255.`)
             }
-            instruction = operation === 'STORE'
+            instruction = operation === 'STORE' || operation === 'LOAD'
               ? { operation, register: destination, address: Number(parts[1]) }
               : { operation, register: destination, value: Number(parts[1]) }
           }

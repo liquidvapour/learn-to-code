@@ -103,6 +103,18 @@ test('PUSH writes a register byte to memory and moves the stack pointer down', (
   }])
 })
 
+test('PUSH rejects a full stack without changing memory', () => {
+  const initial = createInitialState()
+  const full = { ...initial, sp: 0 }
+
+  assert.throws(
+    () => executeInstruction(full, { operation: 'PUSH', register: 'R0' }),
+    /Stack overflow/,
+  )
+  assert.equal(full.sp, 0)
+  assert.equal(full.memory[0], 0)
+})
+
 test('STORE overwrites one addressed byte, preserves other state, and reports the write', () => {
   const initial = createInitialState()
   const state = {
@@ -152,17 +164,24 @@ test('STORE accepts address endpoints and rejects invalid addresses and register
   assert.equal(state.pc, 0)
 })
 
-test('PUSH rejects a full stack without changing memory', () => {
+test('LOAD reads one addressed byte, overwrites one register byte, preserves other state, and reports the read', () => {
   const initial = createInitialState()
-  const full = { ...initial, sp: 0 }
+  const state = {
+    ...initial,
+  }
+  state.memory[42] = 9
+  state.memory[43] = 17
+  const instruction = { operation: 'LOAD', register: 'R2', address: 42 }
+  const result = executeInstruction(state, instruction)
 
-  assert.throws(
-    () => executeInstruction(full, { operation: 'PUSH', register: 'R0' }),
-    /Stack overflow/,
-  )
-  assert.equal(full.sp, 0)
-  assert.equal(full.memory[0], 0)
+  assert.equal(result.state.registers.R2, 9)
+  assert.equal(result.state.memory, state.memory)
+  assert.equal(state.pc, 0)
+  assert.deepEqual(result.events, [{
+    kind: 'register-write', register: 'R2', previous: 0, value: 9, source: 'memory', sourceRegister: 'R2',
+  }])
 })
+
 
 test('the five-instruction sample produces 12 on the stack and then halts', () => {
   const instructions = [

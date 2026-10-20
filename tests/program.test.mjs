@@ -25,6 +25,8 @@ test('STORE parses decimal address endpoints with flexible case and spacing', ()
   assert.deepEqual(program.map((line) => line.lineNumber), [2, 3])
 })
 
+
+
 test('STORE rejects invalid operands with source line errors and blocks the whole program', () => {
   for (const operands of ['R4, 0', 'R0, -1', 'R0, 256', 'R0, 1.5', 'R0, 0x41', 'R0, NaN', 'R0, Infinity', 'R0 1', 'R0,', ', 0', 'R0, 0, 1', '']) {
     const { program, errors } = parseProgram(`MOV R0, 65\nSTORE ${operands}\nHALT`)
@@ -36,6 +38,15 @@ test('STORE rejects invalid operands with source line errors and blocks the whol
   assert.match(parseProgram('STORE R0, 256').errors[0].message, /STORE address must be a decimal integer from 0 to 255/)
 })
 
+test('LOAD', () => {
+  const { program, errors } = parseProgram('LOAD R1, 0')
+  const { instruction } = program[0]
+  assert.equal(instruction.operation, 'LOAD')
+  assert.equal(instruction.register, 'R1')
+  assert.equal(instruction.address, 0)
+
+})
+
 test('whitespace, case, blank lines, and byte endpoints preserve source mapping', () => {
   const { program, errors } = parseProgram('\r\n mov r0 , 0\r\n\tMOV R3, 255\r\n\n add r0,r3\n push r0\n halt  ')
   assert.deepEqual(errors, [])
@@ -45,7 +56,21 @@ test('whitespace, case, blank lines, and byte endpoints preserve source mapping'
 })
 
 test('invalid programs report every source line and expose no executable partial program', () => {
-  const invalid = ['MOV R4, 1', 'MOV R0, 256', 'MOV R0, -1', 'MOV R0, 1.5', 'MOV R0, 0x41', 'MOV R0 1', 'ADD R0, R9', 'PUSH R0, R1', 'HALT R0', 'LOAD R0, 1', 'MOV R0,', 'ADD R0, R1, R2']
+  const invalid = [
+    'MOV R4, 1', 
+    'MOV R0, 256', 
+    'MOV R0, -1', 
+    'MOV R0, 1.5', 
+    'MOV R0, 0x41', 
+    'MOV R0 1', 
+    'ADD R0, R9', 
+    'PUSH R0, R1', 
+    'HALT R0', 
+    'UNKNOWN R0, 1', 
+    'MOV R0,', 
+    'ADD R0, R1, R2',
+    'LOAD RO, 256'
+  ]
   for (const source of invalid) {
     const result = parseProgram(`MOV R0, 1\n\n${source}\nHALT`)
     assert.deepEqual(result.program, [], source)

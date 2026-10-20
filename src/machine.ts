@@ -16,7 +16,7 @@ export type Instruction = Readonly<{
   operation: 'PUSH'
   register: Register
 }> | Readonly<{
-  operation: 'STORE'
+  operation: 'STORE' | 'LOAD'
   register: Register
   address: number
 }> | Readonly<{
@@ -37,6 +37,9 @@ type RegisterWriteSource = Readonly<{
 }> | Readonly<{
   source: 'addition'
   sourceRegister: Register
+}> | Readonly<{
+  source: 'memory'
+  address: number
 }>
 
 export type MachineEvent = Readonly<({
@@ -142,6 +145,14 @@ export function executeInstruction(state: MachineState, instruction: Instruction
         sourceRegister: instruction.register,
       })
     }
+    case 'LOAD':
+      const { register, address  } = instruction
+      if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
+        throw new RangeError('STORE address must be an integer from 0 to 255')
+      }
+      const memory = state.memory.slice()
+      const value = memory[address]
+      return writeRegister(state, register, value, { source: 'memory', sourceRegister: register })
     case 'PUSH': {
       const value = readRegister(state, instruction.register)
       if (state.sp === 0) {
@@ -161,6 +172,7 @@ export function executeInstruction(state: MachineState, instruction: Instruction
         sourceRegister: instruction.register,
       })
     }
+      
     case 'HALT':
       return completeStep(state, { halted: true }, { kind: 'halt' })
     default:
