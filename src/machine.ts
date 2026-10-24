@@ -105,11 +105,15 @@ export function createInitialState(): MachineState {
   }
 }
 
-type MovInstruction = Extract<Instruction, { operation: 'MOV' }>
+const InstrictionMOV = 'MOV'
+const InstrictionADD = 'ADD'
+
+type MOVInstruction = Extract<Instruction, { operation: typeof InstrictionMOV }>
+type ADDInstruction = Extract<Instruction, { operation: typeof InstrictionADD }>
 
 function move(
   state: MachineState, 
-  instruction: MovInstruction
+  instruction: MOVInstruction
 ) {
   if (
     !Number.isInteger(instruction.value) || 
@@ -126,6 +130,16 @@ function move(
   )
 }
 
+function add(state: MachineState, instruction: ADDInstruction) {
+  const value = (readRegister(state, instruction.register) + readRegister(state, instruction.source)) & MAX_BYTE
+  return writeRegister(
+    state,
+    instruction.register,
+    value,
+    { source: 'addition', sourceRegister: instruction.source },
+    { zf: value === 0 },
+  )
+}
 
 
 export function executeInstruction(state: MachineState, instruction: Instruction): StepResult {
@@ -134,18 +148,11 @@ export function executeInstruction(state: MachineState, instruction: Instruction
   }
 
   switch (instruction.operation) {
-    case 'MOV': {
+    case InstrictionMOV: {
       return move(state, instruction)
     }
-    case 'ADD': {
-      const value = (readRegister(state, instruction.register) + readRegister(state, instruction.source)) & MAX_BYTE
-      return writeRegister(
-        state,
-        instruction.register,
-        value,
-        { source: 'addition', sourceRegister: instruction.source },
-        { zf: value === 0 },
-      )
+    case InstrictionADD: {
+      return add(state, instruction)
     }
     case 'STORE': {
       const { address } = instruction
