@@ -30,7 +30,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 - [x] Arrange the workspace in two columns: Program beside Machine, with four registers in one row, then Stack, then Memory; keep a single-column layout on narrow screens.
 - [x] Extract the remaining instruction handlers using the MOV and ADD pattern, preserving current behavior.
-- [x] Fix the existing LOAD memory-source event type mismatch (`sourceRegister` is emitted where `address` is required), then complete the LOAD steps below.
+- [x] Fix the existing LOAD memory-source event type mismatch by emitting the source `address` required by the memory variant of `RegisterWriteSource`.
 
 - [x] Add a Markdown development reference for all supported and planned instructions, including open semantic decisions.
 - [x] Add an in-app instruction reference page covering all supported instructions, examples, machine state, and source rules; keep README focused on project setup.

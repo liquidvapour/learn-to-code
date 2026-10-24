@@ -178,7 +178,7 @@ function load(state: MachineState, instruction: LOADInstruction) {
   }
   const memory = state.memory.slice()
   const value = memory[address]
-  return writeRegister(state, register, value, { source: 'memory', sourceRegister: register })
+  return writeRegister(state, register, value, { source: 'memory', address })
 }
 
 function push(state: MachineState, instruction: PUSHInstruction) {

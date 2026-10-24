@@ -178,7 +178,7 @@ test('LOAD reads one addressed byte, overwrites one register byte, preserves oth
   assert.equal(result.state.memory, state.memory)
   assert.equal(state.pc, 0)
   assert.deepEqual(result.events, [{
-    kind: 'register-write', register: 'R2', previous: 0, value: 9, source: 'memory', sourceRegister: 'R2',
+    kind: 'register-write', register: 'R2', previous: 0, value: 9, source: 'memory', address: 42,
   }])
 })
 
