@@ -16,7 +16,11 @@ export type Instruction = Readonly<{
   operation: 'PUSH'
   register: Register
 }> | Readonly<{
-  operation: 'STORE' | 'LOAD'
+  operation: 'STORE'
+  register: Register
+  address: number
+}> | Readonly<{
+  operation: 'LOAD'
   register: Register
   address: number
 }> | Readonly<{
@@ -107,9 +111,16 @@ export function createInitialState(): MachineState {
 
 const InstrictionMOV = 'MOV'
 const InstrictionADD = 'ADD'
+const InstrictionSTORE = 'STORE'
+const InstrictionLOAD = 'LOAD'
+const InstrictionPUSH = 'PUSH'
+const InstrictionHALT = 'HALT'
 
 type MOVInstruction = Extract<Instruction, { operation: typeof InstrictionMOV }>
 type ADDInstruction = Extract<Instruction, { operation: typeof InstrictionADD }>
+type STOREInstruction = Extract<Instruction, { operation: typeof InstrictionSTORE }>
+type LOADInstruction = Extract<Instruction, { operation: typeof InstrictionLOAD }>
+type PUSHInstruction = Extract<Instruction, { operation: typeof InstrictionPUSH }>
 
 function move(
   state: MachineState, 
@@ -141,6 +152,58 @@ function add(state: MachineState, instruction: ADDInstruction) {
   )
 }
 
+function store(state: MachineState, instruction: STOREInstruction) {
+  const { address } = instruction
+  if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
+    throw new RangeError('STORE address must be an integer from 0 to 255')
+  }
+  const value = readRegister(state, instruction.register)
+  const memory = state.memory.slice()
+  const previous = memory[address]
+  memory[address] = value
+
+  return completeStep(state, { memory }, {
+    kind: 'memory-write',
+    address,
+    previous,
+    value,
+    sourceRegister: instruction.register,
+  })
+}
+
+function load(state: MachineState, instruction: LOADInstruction) {
+  const { register, address } = instruction
+  if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
+    throw new RangeError('STORE address must be an integer from 0 to 255')
+  }
+  const memory = state.memory.slice()
+  const value = memory[address]
+  return writeRegister(state, register, value, { source: 'memory', sourceRegister: register })
+}
+
+function push(state: MachineState, instruction: PUSHInstruction) {
+  const value = readRegister(state, instruction.register)
+  if (state.sp === 0) {
+    throw new RangeError('Stack overflow: no memory remains for PUSH')
+  }
+
+  const address = state.sp - 1
+  const memory = state.memory.slice()
+  const previous = memory[address]
+  memory[address] = value
+
+  return completeStep(state, { memory, sp: address }, {
+    kind: 'memory-write',
+    address,
+    previous,
+    value,
+    sourceRegister: instruction.register,
+  })
+}
+
+function halt(state: MachineState) {
+  return completeStep(state, { halted: true }, { kind: 'halt' })
+}
 
 export function executeInstruction(state: MachineState, instruction: Instruction): StepResult {
   if (state.halted) {
@@ -148,60 +211,18 @@ export function executeInstruction(state: MachineState, instruction: Instruction
   }
 
   switch (instruction.operation) {
-    case InstrictionMOV: {
+    case InstrictionMOV: 
       return move(state, instruction)
-    }
-    case InstrictionADD: {
+    case InstrictionADD: 
       return add(state, instruction)
-    }
-    case 'STORE': {
-      const { address } = instruction
-      if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
-        throw new RangeError('STORE address must be an integer from 0 to 255')
-      }
-      const value = readRegister(state, instruction.register)
-      const memory = state.memory.slice()
-      const previous = memory[address]
-      memory[address] = value
-
-      return completeStep(state, { memory }, {
-        kind: 'memory-write',
-        address,
-        previous,
-        value,
-        sourceRegister: instruction.register,
-      })
-    }
-    case 'LOAD':
-      const { register, address } = instruction
-      if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
-        throw new RangeError('STORE address must be an integer from 0 to 255')
-      }
-      const memory = state.memory.slice()
-      const value = memory[address]
-      return writeRegister(state, register, value, { source: 'memory', sourceRegister: register })
-    case 'PUSH': {
-      const value = readRegister(state, instruction.register)
-      if (state.sp === 0) {
-        throw new RangeError('Stack overflow: no memory remains for PUSH')
-      }
-
-      const address = state.sp - 1
-      const memory = state.memory.slice()
-      const previous = memory[address]
-      memory[address] = value
-
-      return completeStep(state, { memory, sp: address }, {
-        kind: 'memory-write',
-        address,
-        previous,
-        value,
-        sourceRegister: instruction.register,
-      })
-    }
-
-    case 'HALT':
-      return completeStep(state, { halted: true }, { kind: 'halt' })
+    case InstrictionSTORE:
+      return store(state, instruction)
+    case InstrictionLOAD:
+      return load(state, instruction)
+    case InstrictionPUSH:
+      return push(state, instruction)
+    case InstrictionHALT:
+      return halt(state)
     default:
       return unsupportedInstruction(instruction)
   }
