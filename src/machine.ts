@@ -105,6 +105,29 @@ export function createInitialState(): MachineState {
   }
 }
 
+type MovInstruction = Extract<Instruction, { operation: 'MOV' }>
+
+function move(
+  state: MachineState, 
+  instruction: MovInstruction
+) {
+  if (
+    !Number.isInteger(instruction.value) || 
+    instruction.value < 0 || 
+    instruction.value > MAX_BYTE
+  ) {
+    throw new RangeError('MOV value must be an integer from 0 to 255')
+  }
+  return writeRegister(
+    state, 
+    instruction.register, 
+    instruction.value, 
+    { source: 'immediate' }
+  )
+}
+
+
+
 export function executeInstruction(state: MachineState, instruction: Instruction): StepResult {
   if (state.halted) {
     throw new Error('Machine is halted; reset before stepping again')
@@ -112,10 +135,7 @@ export function executeInstruction(state: MachineState, instruction: Instruction
 
   switch (instruction.operation) {
     case 'MOV': {
-      if (!Number.isInteger(instruction.value) || instruction.value < 0 || instruction.value > MAX_BYTE) {
-        throw new RangeError('MOV value must be an integer from 0 to 255')
-      }
-      return writeRegister(state, instruction.register, instruction.value, { source: 'immediate' })
+      return move(state, instruction)
     }
     case 'ADD': {
       const value = (readRegister(state, instruction.register) + readRegister(state, instruction.source)) & MAX_BYTE
@@ -146,7 +166,7 @@ export function executeInstruction(state: MachineState, instruction: Instruction
       })
     }
     case 'LOAD':
-      const { register, address  } = instruction
+      const { register, address } = instruction
       if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
         throw new RangeError('STORE address must be an integer from 0 to 255')
       }
@@ -172,7 +192,7 @@ export function executeInstruction(state: MachineState, instruction: Instruction
         sourceRegister: instruction.register,
       })
     }
-      
+
     case 'HALT':
       return completeStep(state, { halted: true }, { kind: 'halt' })
     default:
