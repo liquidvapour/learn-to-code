@@ -26,6 +26,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
+- [x] Arrange the workspace in two columns: Program beside Machine, with four registers in one row, then Stack, then Memory; keep a single-column layout on narrow screens.
+
 - [x] Add a Markdown development reference for all supported and planned instructions, including open semantic decisions.
 - [x] Add an in-app instruction reference page covering all supported instructions, examples, machine state, and source rules; keep README focused on project setup.
 - [x] Set up VS Code Test Explorer for the built-in `node:test` suite.
