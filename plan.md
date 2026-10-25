@@ -26,6 +26,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
+- [x] Combine the program editor and instruction view with Edit/Debug modes; validate before debugging, reset on Debug, and preserve source when returning to Edit.
+
 - [x] Arrange the workspace in two columns: Program beside Machine, with four registers in one row, then Stack, then Memory; keep a single-column layout on narrow screens.
 
 - [x] Add a Markdown development reference for all supported and planned instructions, including open semantic decisions.

@@ -49,6 +49,7 @@ function App() {
     document.title = showDocs ? 'Instruction reference · Tiny Machine' : 'Tiny Machine'
   }, [showDocs])
   const [source, setSource] = useState(SAMPLE_SOURCE)
+  const [programMode, setProgramMode] = useState<'edit' | 'debug'>('edit')
   const { program, errors } = parseProgram(source)
   const [execution, setExecution] = useState<ExecutionView>(() => ({
     machine: createInitialState(),
@@ -79,6 +80,12 @@ function App() {
     reset()
   }
 
+  function debug() {
+    if (errors.length > 0 || program.length === 0) return
+    reset()
+    setProgramMode('debug')
+  }
+
   return (
     <main className="page">
       <header className="page-header">
@@ -95,54 +102,69 @@ function App() {
       <div className="workspace" aria-label="Tiny Machine workspace" hidden={showDocs}>
         <section className="panel" aria-labelledby="program-title">
           <h2 id="program-title">Program</h2>
-          <p className="panel-note" id="editor-help">One instruction per line. Editing resets the machine; Reset keeps your text.</p>
-          <label className="editor-label" htmlFor="program-source">Program source</label>
-          <textarea
-            id="program-source"
-            className="program-editor"
-            value={source}
-            onChange={(event) => editSource(event.target.value)}
-            rows={8}
-            spellCheck={false}
-            autoCapitalize="off"
-            autoCorrect="off"
-            aria-describedby="editor-help syntax-help program-errors"
-            aria-invalid={errors.length > 0}
-          />
-          <p className="syntax-help" id="syntax-help">
-            Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>STORE R2, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
-            {' '}Registers: R0–R3. MOV values and STORE addresses: decimal 0–255. Case and spacing are flexible; blank lines are skipped.
-            {' '}<a href="#instructions">Full instruction reference</a>.
-          </p>
-          <p className="panel-note">The sample stores decimal 65 at address 0: look for hex 41 and ASCII A in the first memory row.</p>
-          <div id="program-errors" className="program-errors" aria-live="polite">
-            {errors.length > 0 && <ul>{errors.map((error) => (
-              <li key={error.lineNumber}>Line {error.lineNumber}: {error.message}</li>
-            ))}</ul>}
-          </div>
-          <ol className="program-list" aria-label="Parsed instructions with source line numbers">
-            {program.map((line, index) => (
-              <li
-                key={index}
-                className={hasNextInstruction && index === machine.pc ? 'program-line active' : 'program-line'}
-                aria-current={hasNextInstruction && index === machine.pc ? 'step' : undefined}
-              >
-                <span className="line-number">{line.lineNumber}</span>
-                <code>{line.source}</code>
-                {hasNextInstruction && index === machine.pc && <span className="next-marker">Next</span>}
-              </li>
-            ))}
-          </ol>
-          <div className="controls">
-            <button type="button" onClick={step} disabled={!hasNextInstruction}>Step</button>
-            <button type="button" className="secondary" onClick={reset}>Reset</button>
-            <button type="button" className="secondary" onClick={() => editSource(SAMPLE_SOURCE)}>Restore sample</button>
-          </div>
-          <p className="execution-status" aria-live="polite">
-            {errors.length > 0 ? 'Fix the source errors before stepping.' : machine.halted
-              ? 'Machine halted.'
-              : hasNextInstruction ? `Next: line ${program[machine.pc].lineNumber} (PC ${machine.pc})` : program.length === 0 ? 'Enter an instruction to begin.' : 'Program complete.'}
-          </p>
+          {programMode === 'edit' ? (
+            <>
+              <p className="panel-note" id="editor-help">One instruction per line. Debug prepares your program for stepping.</p>
+              <label className="editor-label" htmlFor="program-source">Program source</label>
+              <textarea
+                autoFocus
+                id="program-source"
+                className="program-editor"
+                value={source}
+                onChange={(event) => editSource(event.target.value)}
+                rows={8}
+                spellCheck={false}
+                autoCapitalize="off"
+                autoCorrect="off"
+                aria-describedby="editor-help syntax-help program-errors"
+                aria-invalid={errors.length > 0}
+              />
+              <p className="syntax-help" id="syntax-help">
+                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>STORE R2, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
+                {' '}Registers: R0–R3. MOV values and STORE addresses: decimal 0–255. Case and spacing are flexible; blank lines are skipped.
+                {' '}<a href="#instructions">Full instruction reference</a>.
+              </p>
+              <p className="panel-note">The sample stores decimal 65 at address 0: look for hex 41 and ASCII A in the first memory row.</p>
+              <div id="program-errors" className="program-errors" aria-live="polite">
+                {errors.length > 0 && <ul>{errors.map((error) => (
+                  <li key={error.lineNumber}>Line {error.lineNumber}: {error.message}</li>
+                ))}</ul>}
+              </div>
+              <div className="controls">
+                <button type="button" onClick={debug} disabled={errors.length > 0 || program.length === 0}>Debug</button>
+                <button type="button" className="secondary" onClick={() => editSource(SAMPLE_SOURCE)}>Restore sample</button>
+              </div>
+              <p className="execution-status" aria-live="polite">
+                {errors.length > 0 ? 'Fix the source errors before debugging.' : program.length === 0 ? 'Enter an instruction to begin.' : 'Ready to debug. Use Step to execute one instruction at a time.'}
+              </p>
+            </>
+          ) : (
+            <>
+              <ol className="program-list" aria-label="Parsed instructions with source line numbers">
+                {program.map((line, index) => (
+                  <li
+                    key={index}
+                    className={hasNextInstruction && index === machine.pc ? 'program-line active' : 'program-line'}
+                    aria-current={hasNextInstruction && index === machine.pc ? 'step' : undefined}
+                  >
+                    <span className="line-number">{line.lineNumber}</span>
+                    <code>{line.source}</code>
+                    {hasNextInstruction && index === machine.pc && <span className="next-marker">Next</span>}
+                  </li>
+                ))}
+              </ol>
+              <div className="controls">
+                <button autoFocus type="button" onClick={step} disabled={!hasNextInstruction}>Step</button>
+                <button type="button" className="secondary" onClick={reset}>Reset</button>
+                <button type="button" className="secondary" onClick={() => setProgramMode('edit')}>Edit</button>
+              </div>
+              <p className="execution-status" aria-live="polite">
+                {errors.length > 0 ? 'Fix the source errors before stepping.' : machine.halted
+                  ? 'Machine halted.'
+                  : hasNextInstruction ? `Next: line ${program[machine.pc].lineNumber} (PC ${machine.pc})` : program.length === 0 ? 'Enter an instruction to begin.' : 'Program complete.'}
+              </p>
+            </>
+          )}
         </section>
 
         <div className="machine-state">
