@@ -26,6 +26,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
+- [x] Add `;` end-of-line and comment-only source comments: preserve source text and line numbers, test parsing and execution, and update the language and in-app references.
+
 - [x] Restyle the workspace as a compact instrument rack: viewport-sized desktop layout, internally scrolling program/stack, event-driven read/write cues, and reduced-motion support. Preserve execution behavior and the instruction reference.
 
 - [x] Give each instruction parser its specific instruction return type, following the MOV parser.
@@ -80,7 +82,7 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 
 `STORE` copies a register byte to an integer memory address from 0 through 255, advances `PC`, and emits a memory-write event containing the previous byte. It copies memory before writing and preserves registers, `SP`, and `ZF`. Any memory byte is addressable, including stack bytes. Source syntax is `STORE register, address`, with decimal addresses from 0 through 255. The sample writes decimal 65 to address 0, shown as hex `41` and ASCII `A`.
 
-Program source accepts case-insensitive instructions and registers, flexible whitespace, and blank lines. `MOV` immediates are decimal integers from 0 to 255. Any parse error blocks the whole program. Source line numbers stay separate from zero-based `PC`; editing resets execution, while Reset preserves source.
+Program source accepts case-insensitive instructions and registers, flexible whitespace, blank lines, and `;` comments through the end of a line. Comments may follow instructions or occupy whole lines; comment-only lines do not consume instruction indices. Original source text and line numbers are preserved. `MOV` immediates are decimal integers from 0 to 255. Any parse error blocks the whole program. Source line numbers stay separate from zero-based `PC`; editing resets execution, while Reset preserves source.
 
 ## Working rule
 

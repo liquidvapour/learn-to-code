@@ -8,11 +8,12 @@ The Implemented column indicates availability through both the machine core and 
 
 - Four unsigned byte registers: `R0`, `R1`, `R2`, `R3`, initially zero.
 - 256 memory bytes at addresses `0`–`255`, initially zero. Stack and ordinary data share this memory; no separate regions are enforced yet.
-- `PC` starts at `0` and indexes instructions, excluding blank source lines. Instructions are separate from data memory.
+- `PC` starts at `0` and indexes instructions, excluding blank and comment-only source lines. Instructions are separate from data memory.
 - `SP` starts at `256` (empty stack). The stack grows downward; after a push, `SP` points to the top byte.
 - `ZF` starts false (`0`). Currently only `ADD` updates it.
 - One instruction per line; blank lines are ignored. Instructions and register names are case-insensitive. Whitespace is flexible; two operands require a comma.
-- Values and memory addresses in source use decimal integers from `0` to `255`. Hex literals, labels, and comments are not supported.
+- Values and memory addresses in source use decimal integers from `0` to `255`. Hex literals and labels are not supported.
+- A semicolon (`;`) starts a comment extending to the end of the line, with or without preceding whitespace. Comments may follow instructions or occupy a whole line. Comment-only lines do not produce instructions or advance `PC`. Original source text and line numbers are preserved for display and errors.
 - The whole program must parse successfully before execution. Unsupported instructions are rejected, including the planned instructions below.
 - Every supported instruction advances `PC` by one, including `HALT`. Reaching the end without `HALT` is reported as program completion by the interface.
 
@@ -51,8 +52,9 @@ Open decisions and remaining work: Add address validation, a register-write even
 ### STORE
 
 ```text
-MOV R2, 65
-STORE R2, 0
+; Write the ASCII letter A into memory
+MOV R2, 65 ; ASCII code for A
+STORE R2, 0 ; Address zero
 ```
 
 Memory address `0` holds decimal `65`, displayed as hex `41` and ASCII `A`. Addresses must be integers from `0` to `255`. Any byte can be written, including occupied stack bytes. Registers, `SP`, and `ZF` are preserved.

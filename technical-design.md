@@ -81,7 +81,8 @@ The first prototype includes a small text editor for the tiny assembly language.
 - Use one instruction per line. Show line numbers and mark the instruction that will execute next.
 - Accept consistent, forgiving whitespace and case for instruction names and registers. Display a compact syntax reference beside or beneath the editor.
 - Parse and validate the whole program before execution. Show an error at its source line with a plain explanation, such as “R4 is not a register” or “256 is outside the allowed address range.” Never execute a partially valid program.
-- Keep source line numbers separate from instruction addresses, since blank lines may appear in the editor. Show the mapping clearly when jumps are introduced.
+- A semicolon (`;`) starts a comment through the end of the line. Allow inline and comment-only lines; ignore comments during parsing while preserving original source text and line numbers for display and errors.
+- Keep source line numbers separate from instruction addresses, since blank and comment-only lines may appear in the editor. Show the mapping clearly when jumps are introduced.
 - Editing while paused returns the machine to its initial state and clears execution history. Explain this in the interface so a changed program is never mistaken for a continuation of the old one. Disable editing while running; Pause makes it available again.
 - Step and Run use the same parser and execution rules. Reset keeps the learner's current text and restores the initial machine state. Offer a separate action to restore the sample program.
 - Show which instructions are currently supported. An instruction planned for later should produce a helpful editor error rather than silently doing something different.

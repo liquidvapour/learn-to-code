@@ -15,6 +15,31 @@ test('sample parses and executes to completion', () => {
   assert.equal(state.sp, 255)
 })
 
+test('comments preserve source text and line numbers without consuming execution steps', () => {
+  const { program, errors } = parseProgram(' ; Heading\r\n mov r0, 65; Keep Mixed Case; anything goes\r\n\r\n; UNKNOWN R9\r\n STORE R0, 0 ; Write A\r\nHALT; stop')
+  assert.deepEqual(errors, [])
+  assert.deepEqual(program.map((line) => line.lineNumber), [2, 5, 6])
+  assert.equal(program[0].source, 'mov r0, 65; Keep Mixed Case; anything goes')
+  assert.deepEqual(program.map((line) => line.instruction), [
+    { operation: 'MOV', register: 'R0', value: 65 },
+    { operation: 'STORE', register: 'R0', address: 0 },
+    { operation: 'HALT' },
+  ])
+  const state = program.reduce((state, line) => executeInstruction(state, line.instruction).state, createInitialState())
+  assert.equal(state.memory[0], 65)
+  assert.equal(state.pc, 3)
+  assert.equal(state.halted, true)
+  assert.deepEqual(parseProgram('; Only comments\n  ; HALT\n;'), { program: [], errors: [] })
+})
+
+test('comments do not hide invalid instructions or change error line numbers', () => {
+  const { program, errors } = parseProgram('; Heading\nMOV R0, 1 ; Valid\n; Spacer\nMOV R1, ; Missing byte\nHALT R0 ; Extra operand')
+  assert.deepEqual(program, [])
+  assert.deepEqual(errors.map((error) => error.lineNumber), [4, 5])
+  assert.match(errors[0].message, /Use MOV register, byte/)
+  assert.match(errors[1].message, /HALT takes no operands/)
+})
+
 test('STORE parses decimal address endpoints with flexible case and spacing', () => {
   const { program, errors } = parseProgram('\n store r0 , 0\n\tSTORE R3,255 ')
   assert.deepEqual(errors, [])

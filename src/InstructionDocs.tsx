@@ -3,7 +3,7 @@ export default function InstructionDocs() {
     <article className="instruction-docs">
       <section aria-labelledby="writing-programs">
         <h2 id="writing-programs">Writing a program</h2>
-        <p>Write one instruction per line. Instructions and register names are case-insensitive, spacing is flexible, and blank lines are ignored. Separate two operands with a comma. Comments and labels are not supported.</p>
+        <p>Write one instruction per line. Instructions and register names are case-insensitive, spacing is flexible, and blank lines are ignored. Separate two operands with a comma. A semicolon (<code>;</code>) starts a comment through the end of the line, either after an instruction or on its own line. For example: <code>MOV R2, 65 ; ASCII code for A</code>. Labels are not supported.</p>
         <p>Use registers <code>R0</code>, <code>R1</code>, <code>R2</code>, and <code>R3</code>. Each holds one unsigned byte, from 0 to 255. Write values and memory addresses as decimal integers from 0 to 255; hexadecimal literals such as <code>0x41</code> are not accepted in source.</p>
         <p>Source errors show their line numbers and block the whole program. Step executes the next highlighted instruction. Editing resets execution and clears the machine. Reset clears the machine while keeping your source; Restore sample replaces your source and resets execution.</p>
       </section>
@@ -13,7 +13,7 @@ export default function InstructionDocs() {
         <p>The machine starts with four zeroed registers, 256 zeroed memory bytes, PC = 0, SP = 256, and ZF = 0.</p>
         <dl>
           <dt>PC — program counter</dt>
-          <dd>The zero-based index of the next instruction, excluding blank lines. Every supported instruction advances PC by one, including HALT. Source line numbers are shown separately.</dd>
+          <dd>The zero-based index of the next instruction, excluding blank and comment-only lines. Every supported instruction advances PC by one, including HALT. Source line numbers are shown separately.</dd>
           <dt>SP — stack pointer</dt>
           <dd>The address of the top stack byte. An empty stack has SP = 256, just beyond memory. PUSH grows the stack toward lower addresses.</dd>
           <dt>ZF — zero flag</dt>

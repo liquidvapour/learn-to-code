@@ -10,7 +10,7 @@ import {
   type Register,
 } from './machine.ts'
 
-export const SAMPLE_SOURCE = 'MOV R0, 5\nMOV R1, 7\nADD R0, R1\nPUSH R0\nMOV R2, 65\nSTORE R2, 0\nHALT'
+export const SAMPLE_SOURCE = 'MOV R0, 5\nMOV R1, 7\nADD R0, R1\nPUSH R0\nMOV R2, 65 ; ASCII code for A\nSTORE R2, 0 ; Write A into memory\nHALT'
 
 type ProgramLine = { source: string; lineNumber: number; instruction: Instruction }
 type ProgramError = { lineNumber: number; message: string }
@@ -96,7 +96,7 @@ export function parseProgram(source: string): { program: ProgramLine[]; errors: 
   const program: ProgramLine[] = []
   const errors: ProgramError[] = []
   source.split(/\r?\n/).forEach((sourceLine, index) => {
-    const text = sourceLine.trim().toUpperCase()
+    const text = sourceLine.split(';', 1)[0].trim().toUpperCase()
     if (!text) return
     const lineNumber = index + 1
     try {
