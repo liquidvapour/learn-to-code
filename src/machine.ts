@@ -11,37 +11,37 @@ const InstrictionLOAD = 'LOAD'
 const InstrictionPUSH = 'PUSH'
 const InstrictionHALT = 'HALT'
 
-type MOVInstruction =  Readonly<{
+export type MOVInstruction =  Readonly<{
   operation: 'MOV'
   register: Register
   value: number
 }>
 
-type ADDInstruction = Readonly<{
+export type ADDInstruction = Readonly<{
   operation: 'ADD'
   register: Register
   source: Register
 }>
 
-type STOREInstruction = Readonly<{
+export type STOREInstruction = Readonly<{
   operation: 'STORE'
   register: Register
   address: number
 }> 
 
 
-type LOADInstruction = Readonly<{
+export type LOADInstruction = Readonly<{
   operation: 'LOAD'
   register: Register
   address: number
 }>
 
-type PUSHInstruction = Readonly<{
+export type PUSHInstruction = Readonly<{
   operation: 'PUSH'
   register: Register
 }>
 
-type HALTInstruction = Readonly<{
+export type HALTInstruction = Readonly<{
   operation: 'HALT'
 }>
 

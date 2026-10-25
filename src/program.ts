@@ -1,4 +1,14 @@
-import { REGISTER_NAMES, type Instruction, type Register } from './machine.ts'
+import {
+  REGISTER_NAMES,
+  type Instruction,
+  type MOVInstruction,
+  type ADDInstruction,
+  type STOREInstruction,
+  type LOADInstruction,
+  type PUSHInstruction,
+  type HALTInstruction,
+  type Register,
+} from './machine.ts'
 
 export const SAMPLE_SOURCE = 'MOV R0, 5\nMOV R1, 7\nADD R0, R1\nPUSH R0\nMOV R2, 65\nSTORE R2, 0\nHALT'
 
@@ -27,34 +37,34 @@ function byte(value: string, label: string): number {
   return Number(value)
 }
 
-function move(operands: string): Instruction {
+function move(operands: string): MOVInstruction {
   const [destination, value] = operandPair('MOV', operands, 'byte')
   return { operation: 'MOV', register: register(destination), value: byte(value, 'MOV value') }
 }
 
-function add(operands: string): Instruction {
+function add(operands: string): ADDInstruction {
   const [destination, source] = operandPair('ADD', operands, 'register')
   return { operation: 'ADD', register: register(destination), source: register(source) }
 }
 
-function store(operands: string): Instruction {
+function store(operands: string): STOREInstruction {
   const [destination, address] = operandPair('STORE', operands, 'address')
   return { operation: 'STORE', register: register(destination), address: byte(address, 'STORE address') }
 }
 
-function load(operands: string): Instruction {
+function load(operands: string): LOADInstruction {
   const [destination, address] = operandPair('LOAD', operands, 'address')
   return { operation: 'LOAD', register: register(destination), address: byte(address, 'MOV value') }
 }
 
-function push(operands: string): Instruction {
+function push(operands: string): PUSHInstruction {
   if (!operands || /[\s,]/.test(operands)) {
     throw new Error('Use PUSH register.')
   }
   return { operation: 'PUSH', register: register(operands) }
 }
 
-function halt(operands: string): Instruction {
+function halt(operands: string): HALTInstruction {
   if (operands) {
     throw new Error('HALT takes no operands.')
   }
