@@ -26,6 +26,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
+- [x] Extract per-instruction parsers and shared operand validation in `program.ts`, following the machine handler pattern while preserving parser behavior.
+
 - [x] Combine the program editor and instruction view with Edit/Debug modes; validate before debugging, reset on Debug, and preserve source when returning to Edit.
 
 - [x] Arrange the workspace in two columns: Program beside Machine, with four registers in one row, then Stack, then Memory; keep a single-column layout on narrow screens.
