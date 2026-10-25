@@ -4,28 +4,56 @@ const MAX_BYTE = 0xff
 
 export type Register = (typeof REGISTER_NAMES)[number]
 
-export type Instruction = Readonly<{
+const InstrictionMOV = 'MOV'
+const InstrictionADD = 'ADD'
+const InstrictionSTORE = 'STORE'
+const InstrictionLOAD = 'LOAD'
+const InstrictionPUSH = 'PUSH'
+const InstrictionHALT = 'HALT'
+
+type MOVInstruction =  Readonly<{
   operation: 'MOV'
   register: Register
   value: number
-}> | Readonly<{
+}>
+
+type ADDInstruction = Readonly<{
   operation: 'ADD'
   register: Register
   source: Register
-}> | Readonly<{
-  operation: 'PUSH'
-  register: Register
-}> | Readonly<{
+}>
+
+type STOREInstruction = Readonly<{
   operation: 'STORE'
   register: Register
   address: number
-}> | Readonly<{
+}> 
+
+
+type LOADInstruction = Readonly<{
   operation: 'LOAD'
   register: Register
   address: number
-}> | Readonly<{
+}>
+
+type PUSHInstruction = Readonly<{
+  operation: 'PUSH'
+  register: Register
+}>
+
+type HALTInstruction = Readonly<{
   operation: 'HALT'
 }>
+
+
+
+export type Instruction = 
+  | MOVInstruction 
+  | ADDInstruction 
+  | STOREInstruction
+  | LOADInstruction 
+  | PUSHInstruction 
+  | HALTInstruction
 
 export type MachineState = Readonly<{
   registers: Readonly<Record<Register, number>>
@@ -109,18 +137,6 @@ export function createInitialState(): MachineState {
   }
 }
 
-const InstrictionMOV = 'MOV'
-const InstrictionADD = 'ADD'
-const InstrictionSTORE = 'STORE'
-const InstrictionLOAD = 'LOAD'
-const InstrictionPUSH = 'PUSH'
-const InstrictionHALT = 'HALT'
-
-type MOVInstruction = Extract<Instruction, { operation: typeof InstrictionMOV }>
-type ADDInstruction = Extract<Instruction, { operation: typeof InstrictionADD }>
-type STOREInstruction = Extract<Instruction, { operation: typeof InstrictionSTORE }>
-type LOADInstruction = Extract<Instruction, { operation: typeof InstrictionLOAD }>
-type PUSHInstruction = Extract<Instruction, { operation: typeof InstrictionPUSH }>
 
 function move(
   state: MachineState, 
