@@ -17,7 +17,7 @@ export default function InstructionDocs() {
           <dt>SP — stack pointer</dt>
           <dd>The address of the top stack byte. An empty stack has SP = 256, just beyond memory. PUSH grows the stack toward lower addresses.</dd>
           <dt>ZF — zero flag</dt>
-          <dd>ADD sets this to 1 when its stored result is zero, otherwise 0. All other supported instructions preserve it.</dd>
+          <dd>ADD and SUB set this to 1 when their stored result is zero, otherwise 0. All other supported instructions preserve it.</dd>
         </dl>
         <p>Memory addresses run from decimal 0 to 255 (hex 0x00–0xFF). The hex grid and stack close-up show the same memory. Printable ASCII bytes (32–126) appear as characters; other bytes appear as dots.</p>
       </section>
@@ -37,6 +37,13 @@ export default function InstructionDocs() {
           <p>Add the two register values and store the low 8 bits in the destination. Results wrap around at 256: 255 + 1 becomes 0. ZF reflects the stored result. Memory and SP stay unchanged; the source register stays unchanged unless it is also the destination.</p>
           <pre><code>{'MOV R0, 255\nMOV R1, 1\nADD R0, R1'}</code></pre>
           <p>R0 becomes 0, R1 remains 1, and ZF becomes 1. Using the same register twice, such as <code>ADD R0, R0</code>, doubles its value with the same wraparound rule.</p>
+        </section>
+        <section>
+          <h3>SUB — subtract two registers</h3>
+          <p><code>SUB destination, source</code></p>
+          <p>Subtract the source register from the destination and store the result modulo 256: 0 − 1 becomes 255. ZF is 1 exactly when the stored result is zero. Memory, SP, and other registers stay unchanged.</p>
+          <pre><code>{'MOV R0, 0\nMOV R1, 1\nSUB R0, R1\nSUB R0, R0\nHALT'}</code></pre>
+          <p>The first SUB makes R0 = 255 and ZF = 0, while R1 remains 1. Subtracting R0 from itself then makes R0 = 0 and ZF = 1. The source register is highlighted as a read and the destination as a write.</p>
         </section>
         <section>
           <h3>STORE — write a register to memory</h3>

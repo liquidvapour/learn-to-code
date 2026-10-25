@@ -94,10 +94,10 @@ test('LOAD rejects invalid operands with precise source errors and blocks the wh
   }
 })
 
-test('unsupported-instruction help includes LOAD', () => {
+test('unsupported-instruction help includes SUB and LOAD', () => {
   assert.deepEqual(parseProgram('UNKNOWN').errors, [{
     lineNumber: 1,
-    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, STORE, LOAD, PUSH, or HALT.',
+    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, STORE, LOAD, PUSH, or HALT.',
   }])
 })
 
@@ -132,4 +132,54 @@ test('invalid programs report every source line and expose no executable partial
     assert.ok(result.errors[0].message.length > 0)
   }
   assert.equal(parseProgram(invalid.join('\n')).errors.length, invalid.length)
+})
+
+
+test('SUB parses flexible case, spacing, and comments while preserving source mapping', () => {
+  const { program, errors } = parseProgram('; Subtract\n sub r0 , r1 ; Keep Case\n\tSUB R3,R3 ')
+  assert.deepEqual(errors, [])
+  assert.deepEqual(program.map((line) => line.instruction), [
+    { operation: 'SUB', register: 'R0', source: 'R1' },
+    { operation: 'SUB', register: 'R3', source: 'R3' },
+  ])
+  assert.deepEqual(program.map((line) => line.lineNumber), [2, 3])
+  assert.equal(program[0].source, 'sub r0 , r1 ; Keep Case')
+})
+
+test('SUB rejects invalid operands and blocks the whole program with precise errors', () => {
+  const invalid = [
+    ['R4, R0', 'R4 is not a register. Use R0, R1, R2, or R3.'],
+    ['R0, R9', 'R9 is not a register. Use R0, R1, R2, or R3.'],
+    ['R0, 1', '1 is not a register. Use R0, R1, R2, or R3.'],
+    ...['', 'R0', 'R0 R1', 'R0,', ', R1', 'R0, R1, R2'].map((operands) => [
+      operands, 'Use SUB register, register.',
+    ]),
+  ]
+  for (const [operands, message] of invalid) {
+    assert.deepEqual(parseProgram(`MOV R0, 5\nSUB ${operands}\nHALT`), {
+      program: [], errors: [{ lineNumber: 2, message }],
+    }, operands)
+  }
+})
+
+test('documented SUB example wraps below zero and sets ZF on self-subtraction', () => {
+  const { program, errors } = parseProgram('MOV R0, 0\nMOV R1, 1\nSUB R0, R1\nSUB R0, R0\nHALT')
+  assert.deepEqual(errors, [])
+  let state = createInitialState()
+  const steps = program.map(({ instruction }) => {
+    const result = executeInstruction(state, instruction)
+    state = result.state
+    return result
+  })
+  assert.equal(steps[2].state.registers.R0, 255)
+  assert.equal(steps[2].state.zf, false)
+  assert.deepEqual(steps[2].events, [{
+    kind: 'register-write', register: 'R0', previous: 0, value: 255,
+    source: 'subtraction', sourceRegister: 'R1',
+  }])
+  assert.equal(steps[3].state.registers.R0, 0)
+  assert.equal(steps[3].state.zf, true)
+  assert.equal(state.registers.R1, 1)
+  assert.equal(state.pc, 5)
+  assert.equal(state.halted, true)
 })

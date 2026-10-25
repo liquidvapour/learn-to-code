@@ -10,7 +10,7 @@ The Implemented column indicates availability through both the machine core and 
 - 256 memory bytes at addresses `0`–`255`, initially zero. Stack and ordinary data share this memory; no separate regions are enforced yet.
 - `PC` starts at `0` and indexes instructions, excluding blank and comment-only source lines. Instructions are separate from data memory.
 - `SP` starts at `256` (empty stack). The stack grows downward; after a push, `SP` points to the top byte.
-- `ZF` starts false (`0`). Currently only `ADD` updates it.
+- `ZF` starts false (`0`). `ADD` and `SUB` update it.
 - One instruction per line; blank lines are ignored. Instructions and register names are case-insensitive. Whitespace is flexible; two operands require a comma.
 - Values and memory addresses in source use decimal integers from `0` to `255`. Hex literals and labels are not supported.
 - A semicolon (`;`) starts a comment extending to the end of the line, with or without preceding whitespace. Comments may follow instructions or occupy a whole line. Comment-only lines do not produce instructions or advance `PC`. Original source text and line numbers are preserved for display and errors.
@@ -27,7 +27,7 @@ The Implemented column indicates availability through both the machine core and 
 | `LOAD destination, address` | Yes | Copy a memory byte into a register. | Preserved |
 | `STORE source, address` | Yes | Copy a register byte into memory. | Preserved |
 | `ADD destination, source` | Yes | Add register values into the destination, modulo 256. | Set if stored result is zero; otherwise cleared |
-| `SUB destination, source` | No | Subtract source from destination. | Undecided |
+| `SUB destination, source` | Yes | Subtract source from destination, modulo 256. | Set if stored result is zero; otherwise cleared |
 | `CMP destination, source` | No | Compare two registers without changing them. | Intended to indicate equality; exact rule pending |
 | `JMP target` | No | Jump unconditionally. | Undecided |
 | `JZ target` | No | Jump when `ZF` is set. | Undecided |
@@ -77,9 +77,17 @@ ADD R0, R1
 
 ### SUB
 
-`SUB R0, R1`: Store `R0 - R1` in `R0`.
+```text
+MOV R0, 0
+MOV R1, 1
+SUB R0, R1
+SUB R0, R0
+HALT
+```
 
-Open decisions and remaining work: Define 8-bit wraparound and whether the stored result updates `ZF`.
+The first `SUB` stores `0 - 1` modulo 256 in `R0`, producing `255` and clearing `ZF`. The second subtracts a register from itself, producing `0` and setting `ZF`. `R1` remains `1`. Each subtraction advances `PC` and preserves memory, `SP`, and other registers.
+
+Both operands must be registers. Execution emits a subtraction register-write event; the interface explains the subtraction and highlights the source register as a read and the destination as a write.
 
 ### CMP
 

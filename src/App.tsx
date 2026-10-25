@@ -33,7 +33,13 @@ function describeEvent(event: MachineEvent | null) {
   if (event.kind === 'memory-write') {
     return `${event.sourceRegister} → memory ${hex(event.address)}: ${event.previous} → ${event.value}`
   }
-  const source = event.source === 'memory' ? `Memory ${hex(event.address)}` : event.source === 'addition' ? `${event.register} + ${event.sourceRegister}` : 'Immediate'
+  const source = event.source === 'memory'
+    ? `Memory ${hex(event.address)}`
+    : event.source === 'addition'
+      ? `${event.register} + ${event.sourceRegister}`
+      : event.source === 'subtraction'
+        ? `${event.register} − ${event.sourceRegister}`
+        : 'Immediate'
   return `${source} → ${event.register}: ${event.previous} → ${event.value}`
 }
 
@@ -64,7 +70,7 @@ function App() {
     activeLine.current?.scrollIntoView({ block: 'nearest' })
   }, [machine.pc, programMode])
   const readRegister = lastEvent?.kind === 'memory-write' ? lastEvent.sourceRegister
-    : lastEvent?.kind === 'register-write' && lastEvent.source === 'addition' ? lastEvent.sourceRegister : null
+    : lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction') ? lastEvent.sourceRegister : null
   const writtenRegister = lastEvent?.kind === 'register-write' ? lastEvent.register : null
   const readAddress = lastEvent?.kind === 'register-write' && lastEvent.source === 'memory' ? lastEvent.address : null
   const writtenAddress = lastEvent?.kind === 'memory-write' ? lastEvent.address : null
@@ -131,7 +137,7 @@ function App() {
                 aria-invalid={errors.length > 0}
               />
               <p className="syntax-help" id="syntax-help">
-                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
+                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
                 {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
                 {' '}<a href="#instructions">Full instruction reference</a>.
               </p>
@@ -186,8 +192,8 @@ function App() {
                 <div className={`register${readRegister === register ? ' signal-read' : ''}${writtenRegister === register ? ' signal-write' : ''}`} key={`${register}-${machine.pc}`}>
                   <dt>{register}</dt>
                   <dd>{machine.registers[register].toString().padStart(3, '0')}<small>{hex(machine.registers[register])}</small>
-                  <meter min={0} max={255} value={machine.registers[register]} aria-label={`${register} byte value`} />
-                  <span className="register-role">{writtenRegister === register ? '↓ WRITE' : readRegister === register ? '↑ READ' : 'BYTE'}</span></dd>
+                    <meter min={0} max={255} value={machine.registers[register]} aria-label={`${register} byte value`} />
+                    <span className="register-role">{writtenRegister === register ? '↓ WRITE' : readRegister === register ? '↑ READ' : 'BYTE'}</span></dd>
                 </div>
               ))}
             </dl>
@@ -207,22 +213,22 @@ function App() {
             <meter className="stack-meter" min={0} max={MEMORY_SIZE} value={stackAddresses.length} aria-label="Stack bytes used" />
             <h3>Stack close-up <span>(top first)</span></h3>
             <div className="stack-content" tabIndex={0} role="region" aria-label="Stack contents">
-            {stackAddresses.length === 0 ? (
-              <p className="empty-stack">No values pushed yet.</p>
-            ) : (
-              <table className="stack-table">
-                <thead><tr><th scope="col">Address</th><th scope="col">Hex</th><th scope="col">Dec</th></tr></thead>
-                <tbody>
-                  {stackAddresses.map((address) => (
-                    <tr key={address}>
-                      <th scope="row">{hex(address)}</th>
-                      <td>{hex(machine.memory[address])}</td>
-                      <td>{machine.memory[address]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+              {stackAddresses.length === 0 ? (
+                <p className="empty-stack">No values pushed yet.</p>
+              ) : (
+                <table className="stack-table">
+                  <thead><tr><th scope="col">Address</th><th scope="col">Hex</th><th scope="col">Dec</th></tr></thead>
+                  <tbody>
+                    {stackAddresses.map((address) => (
+                      <tr key={address}>
+                        <th scope="row">{hex(address)}</th>
+                        <td>{hex(machine.memory[address])}</td>
+                        <td>{machine.memory[address]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </section>
 

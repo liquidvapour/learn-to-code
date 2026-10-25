@@ -57,10 +57,15 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
-- [ ] **`SUB`:**
+- [x] **`SUB`:**
   - [x] Add core register subtraction modulo 256, set `ZF` from the stored result, emit a subtraction register-write event, and test wraparound, state preservation, and invalid registers.
-  - [ ] Parse `SUB destination, source`, connect subtraction events to interface explanations and read highlights, and update syntax help and instruction references with an executable example.
-- [ ] **`CMP`:** compare two registers without changing them, then define precisely how it sets `ZF`.
+  - [x] Parse `SUB destination, source`, connect subtraction events to interface explanations and read highlights, and update syntax help and instruction references with an executable example.
+    - Add typed parsing plus valid/invalid operand and executable-example coverage.
+    - Handle subtraction events using the existing arithmetic highlight conventions.
+    - Update editor help, README, and both instruction references; run tests and production build.
+- [ ] **`CMP`:** compare two registers without changing them.
+  - [ ] Add core comparison: set `ZF` when the register values are equal and clear it otherwise; preserve registers, memory, and `SP`, advance `PC`, and emit a comparison event. Test equal/unequal values, self-comparison, state preservation, and invalid registers.
+  - [ ] Parse `CMP destination, source`, show comparison explanations and register reads, and update syntax help and instruction references.
 - [ ] **`JMP` and `JZ`:** introduce instruction addresses and conditional control flow. Define valid jump targets and show where control moves.
 - [ ] **`POP`:** remove the top byte from the downward-growing stack into a register. Define empty-stack behaviour.
 - [ ] **`CALL` and `RET`:** use the stack for return addresses, define address representation and stack-overflow/underflow faults, then show calls and returns in the program view.
@@ -85,7 +90,7 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 
 `ADD` stores the low 8 bits of the sum in its destination register and sets `ZF` when the stored result is zero.
 
-`SUB` is implemented in the machine core: it stores destination minus source modulo 256 (so `0 - 1` becomes `255`) and sets `ZF` exactly when the stored result is zero. It advances `PC`, preserves memory, `SP`, and other registers, and emits a subtraction register-write event. Subtracting a register from itself produces zero. Core tests and the production build pass; source parsing, interface event handling, and instruction references are the next step.
+`SUB` is available in the machine core and source parser: it stores destination minus source modulo 256 (so `0 - 1` becomes `255`) and sets `ZF` exactly when the stored result is zero. It advances `PC`, preserves memory, `SP`, and other registers, and emits a subtraction register-write event. Subtracting a register from itself produces zero. Source syntax is `SUB destination, source`, with two register operands. The interface explains subtraction and highlights its source as read and destination as written. Editor help and instruction references include SUB, with a runnable wraparound and self-subtraction example. Core/parser tests and the production build pass; browser verification of the highlights and explanation remains pending.
 
 `PUSH` decrements `SP` before writing, so `SP` points at the top byte after a push. The empty stack has `SP = 256`, and a push at `SP = 0` overflows. Stack writes copy memory before changing it, leaving earlier machine states intact.
 
