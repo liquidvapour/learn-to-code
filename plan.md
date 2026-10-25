@@ -57,7 +57,9 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
-- [ ] **`SUB`:** add 8-bit subtraction, define its wraparound behaviour, and decide whether it updates `ZF`.
+- [ ] **`SUB`:**
+  - [x] Add core register subtraction modulo 256, set `ZF` from the stored result, emit a subtraction register-write event, and test wraparound, state preservation, and invalid registers.
+  - [ ] Parse `SUB destination, source`, connect subtraction events to interface explanations and read highlights, and update syntax help and instruction references with an executable example.
 - [ ] **`CMP`:** compare two registers without changing them, then define precisely how it sets `ZF`.
 - [ ] **`JMP` and `JZ`:** introduce instruction addresses and conditional control flow. Define valid jump targets and show where control moves.
 - [ ] **`POP`:** remove the top byte from the downward-growing stack into a register. Define empty-stack behaviour.
@@ -82,6 +84,8 @@ The workspace uses an instrument-rack layout on desktop (1100px and wider, with 
 The current machine uses zero-based instruction indices in `PC`. `MOV` accepts an unsigned byte (`0` through `255`), advances `PC` by one, and leaves `ZF`, `SP`, and memory unchanged. The empty downward-growing stack starts with `SP` one past the final byte, at `256`.
 
 `ADD` stores the low 8 bits of the sum in its destination register and sets `ZF` when the stored result is zero.
+
+`SUB` is implemented in the machine core: it stores destination minus source modulo 256 (so `0 - 1` becomes `255`) and sets `ZF` exactly when the stored result is zero. It advances `PC`, preserves memory, `SP`, and other registers, and emits a subtraction register-write event. Subtracting a register from itself produces zero. Core tests and the production build pass; source parsing, interface event handling, and instruction references are the next step.
 
 `PUSH` decrements `SP` before writing, so `SP` points at the top byte after a push. The empty stack has `SP = 256`, and a push at `SP = 0` overflows. Stack writes copy memory before changing it, leaving earlier machine states intact.
 

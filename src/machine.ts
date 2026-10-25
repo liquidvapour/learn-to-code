@@ -6,6 +6,7 @@ export type Register = (typeof REGISTER_NAMES)[number]
 
 const InstrictionMOV = 'MOV'
 const InstrictionADD = 'ADD'
+const InstrictionSUB = 'SUB'
 const InstrictionSTORE = 'STORE'
 const InstrictionLOAD = 'LOAD'
 const InstrictionPUSH = 'PUSH'
@@ -19,6 +20,12 @@ export type MOVInstruction =  Readonly<{
 
 export type ADDInstruction = Readonly<{
   operation: 'ADD'
+  register: Register
+  source: Register
+}>
+
+export type SUBInstruction = Readonly<{
+  operation: 'SUB'
   register: Register
   source: Register
 }>
@@ -49,7 +56,8 @@ export type HALTInstruction = Readonly<{
 
 export type Instruction = 
   | MOVInstruction 
-  | ADDInstruction 
+  | ADDInstruction
+  | SUBInstruction
   | STOREInstruction
   | LOADInstruction 
   | PUSHInstruction 
@@ -67,7 +75,7 @@ export type MachineState = Readonly<{
 type RegisterWriteSource = Readonly<{
   source: 'immediate'
 }> | Readonly<{
-  source: 'addition'
+  source: 'addition' | 'subtraction'
   sourceRegister: Register
 }> | Readonly<{
   source: 'memory'
@@ -168,6 +176,17 @@ function add(state: MachineState, instruction: ADDInstruction) {
   )
 }
 
+function subtract(state: MachineState, instruction: SUBInstruction) {
+  const value = (readRegister(state, instruction.register) - readRegister(state, instruction.source)) & MAX_BYTE
+  return writeRegister(
+    state,
+    instruction.register,
+    value,
+    { source: 'subtraction', sourceRegister: instruction.source },
+    { zf: value === 0 },
+  )
+}
+
 function store(state: MachineState, instruction: STOREInstruction) {
   const { address } = instruction
   if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
@@ -231,6 +250,8 @@ export function executeInstruction(state: MachineState, instruction: Instruction
       return move(state, instruction)
     case InstrictionADD: 
       return add(state, instruction)
+    case InstrictionSUB:
+      return subtract(state, instruction)
     case InstrictionSTORE:
       return store(state, instruction)
     case InstrictionLOAD:

@@ -51,7 +51,7 @@ test('MOV accepts byte endpoints and rejects values outside a byte', () => {
     /Unknown register/,
   )
   assert.throws(
-    () => executeInstruction(state, { operation: 'SUB', register: 'R0', value: 5 }),
+    () => executeInstruction(state, { operation: 'UNKNOWN', register: 'R0', value: 5 }),
     /Unsupported instruction/,
   )
 })
@@ -263,6 +263,69 @@ test('the five-instruction sample produces 12 on the stack and then halts', () =
   assert.equal(initial.memory[255], 0)
   assert.throws(
     () => executeInstruction(current, { operation: 'MOV', register: 'R0', value: 1 }),
+    /Machine is halted/,
+  )
+})
+
+
+test('SUB wraps subtraction to a byte, updates ZF, and preserves unrelated state', () => {
+  for (const [destination, source, expected] of [
+    [12, 7, 5], [0, 1, 255], [0, 255, 1], [255, 0, 255], [255, 255, 0], [0, 0, 0],
+  ]) {
+    for (const zf of [false, true]) {
+      const state = {
+        ...createInitialState(),
+        registers: { R0: destination, R1: source, R2: 42, R3: 17 },
+        pc: 3,
+        sp: 250,
+        zf,
+      }
+      state.memory[250] = 65
+      const before = structuredClone(state)
+      const instruction = { operation: 'SUB', register: 'R0', source: 'R1' }
+      const result = executeInstruction(state, instruction)
+
+      assert.deepEqual(result, executeInstruction(state, instruction))
+      assert.deepEqual(result.state, {
+        ...before,
+        registers: { ...before.registers, R0: expected },
+        pc: 4,
+        zf: expected === 0,
+      })
+      assert.equal(result.state.memory, state.memory)
+      assert.deepEqual(state, before)
+      assert.deepEqual(result.events, [{
+        kind: 'register-write', register: 'R0', previous: destination, value: expected,
+        source: 'subtraction', sourceRegister: 'R1',
+      }])
+    }
+  }
+})
+
+test('SUB supports every register and subtracting a register from itself', () => {
+  const state = { ...createInitialState(), registers: { R0: 1, R1: 7, R2: 128, R3: 255 } }
+  for (const register of ['R0', 'R1', 'R2', 'R3']) {
+    for (const source of ['R0', 'R1', 'R2', 'R3']) {
+      const result = executeInstruction(state, { operation: 'SUB', register, source })
+      const expected = (state.registers[register] - state.registers[source] + 256) % 256
+      assert.deepEqual(result.state.registers, { ...state.registers, [register]: expected })
+      assert.equal(result.state.zf, expected === 0)
+    }
+  }
+})
+
+test('SUB rejects invalid registers and halted execution without changing state', () => {
+  const state = createInitialState()
+  const before = structuredClone(state)
+  for (const [register, source] of [['R4', 'R0'], ['R0', 'R4']]) {
+    assert.throws(
+      () => executeInstruction(state, { operation: 'SUB', register, source }),
+      /Unknown register: R4/,
+    )
+    assert.deepEqual(state, before)
+  }
+  assert.throws(
+    () => executeInstruction({ ...state, halted: true }, { operation: 'SUB', register: 'R0', source: 'R1' }),
     /Machine is halted/,
   )
 })
