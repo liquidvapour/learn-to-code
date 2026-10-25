@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import InstructionDocs from './InstructionDocs'
 import {
   createInitialState,
@@ -31,9 +31,10 @@ function describeEvent(event: MachineEvent | null) {
   if (event === null) return 'Press Step to execute the highlighted instruction.'
   if (event.kind === 'halt') return 'HALT stopped execution. Reset to run again.'
   if (event.kind === 'memory-write') {
-    return `${event.sourceRegister} → memory ${hex(event.address)}: ${event.value}`
+    return `${event.sourceRegister} → memory ${hex(event.address)}: ${event.previous} → ${event.value}`
   }
-  return `${event.register}: ${event.previous} → ${event.value}`
+  const source = event.source === 'memory' ? `Memory ${hex(event.address)}` : event.source === 'addition' ? `${event.register} + ${event.sourceRegister}` : 'Immediate'
+  return `${source} → ${event.register}: ${event.previous} → ${event.value}`
 }
 
 function App() {
@@ -57,6 +58,15 @@ function App() {
   }))
 
   const { machine, lastEvent } = execution
+  const activeLine = useRef<HTMLLIElement>(null)
+  useEffect(() => {
+    activeLine.current?.scrollIntoView({ block: 'nearest' })
+  }, [machine.pc, programMode])
+  const readRegister = lastEvent?.kind === 'memory-write' ? lastEvent.sourceRegister
+    : lastEvent?.kind === 'register-write' && lastEvent.source === 'addition' ? lastEvent.sourceRegister : null
+  const writtenRegister = lastEvent?.kind === 'register-write' ? lastEvent.register : null
+  const readAddress = lastEvent?.kind === 'register-write' && lastEvent.source === 'memory' ? lastEvent.address : null
+  const writtenAddress = lastEvent?.kind === 'memory-write' ? lastEvent.address : null
   const hasNextInstruction = errors.length === 0 && !machine.halted && machine.pc < program.length
   const stackAddresses = Array.from({ length: MEMORY_SIZE - machine.sp }, (_, offset) => machine.sp + offset)
 
@@ -87,11 +97,11 @@ function App() {
   }
 
   return (
-    <main className="page">
+    <main className={`page${showDocs ? ' docs-page' : ''}`}>
       <header className="page-header">
-        <span className="eyebrow">A visual computer for learning</span>
+        <span className="eyebrow">TM–01 / Programmable learning instrument</span>
         <h1>{showDocs ? 'Instruction reference' : 'Tiny Machine'}</h1>
-        <p>{showDocs ? 'Syntax, examples, and effects for every supported instruction.' : 'Step through a tiny program and watch the machine change.'}</p>
+        <p>{showDocs ? 'Syntax, examples, and effects for every supported instruction.' : '8-bit computer · 4 registers · 256 bytes · one instruction at a time'}</p>
         <nav className="page-nav" aria-label="Main navigation">
           <a href="#machine" aria-current={!showDocs ? 'page' : undefined}>Machine</a>
           <a href="#instructions" aria-current={showDocs ? 'page' : undefined}>Instruction reference</a>
@@ -100,8 +110,8 @@ function App() {
 
       {showDocs && <InstructionDocs />}
       <div className="workspace" aria-label="Tiny Machine workspace" hidden={showDocs}>
-        <section className="panel" aria-labelledby="program-title">
-          <h2 id="program-title">Program</h2>
+        <section className="panel program-panel" aria-labelledby="program-title">
+          <div className="module-heading"><h2 id="program-title"><span>01</span> Program</h2><span className="module-label">{programMode === 'edit' ? 'SOURCE / EDIT' : 'SEQUENCER / DEBUG'}</span></div>
           {programMode === 'edit' ? (
             <>
               <p className="panel-note" id="editor-help">One instruction per line. Debug prepares your program for stepping.</p>
@@ -124,7 +134,6 @@ function App() {
                 {' '}Registers: R0–R3. MOV values and STORE addresses: decimal 0–255. Case and spacing are flexible; blank lines are skipped.
                 {' '}<a href="#instructions">Full instruction reference</a>.
               </p>
-              <p className="panel-note">The sample stores decimal 65 at address 0: look for hex 41 and ASCII A in the first memory row.</p>
               <div id="program-errors" className="program-errors" aria-live="polite">
                 {errors.length > 0 && <ul>{errors.map((error) => (
                   <li key={error.lineNumber}>Line {error.lineNumber}: {error.message}</li>
@@ -144,6 +153,7 @@ function App() {
                 {program.map((line, index) => (
                   <li
                     key={index}
+                    ref={hasNextInstruction && index === machine.pc ? activeLine : undefined}
                     className={hasNextInstruction && index === machine.pc ? 'program-line active' : 'program-line'}
                     aria-current={hasNextInstruction && index === machine.pc ? 'step' : undefined}
                   >
@@ -154,7 +164,7 @@ function App() {
                 ))}
               </ol>
               <div className="controls">
-                <button autoFocus type="button" onClick={step} disabled={!hasNextInstruction}>Step</button>
+                <button autoFocus type="button" onClick={step} disabled={!hasNextInstruction}>Step ▷</button>
                 <button type="button" className="secondary" onClick={reset}>Reset</button>
                 <button type="button" className="secondary" onClick={() => setProgramMode('edit')}>Edit</button>
               </div>
@@ -168,31 +178,34 @@ function App() {
         </section>
 
         <div className="machine-state">
-          <section className="panel" aria-labelledby="machine-title">
-            <h2 id="machine-title">Machine</h2>
-            <p className="panel-note">Registers hold one byte each.</p>
+          <section className="panel registers-panel" aria-labelledby="machine-title">
+            <div className="module-heading"><h2 id="machine-title"><span>02</span> Registers</h2><span className="module-label">UNSIGNED / 8 BIT</span></div>
             <dl className="register-list">
               {REGISTER_NAMES.map((register) => (
-                <div className="register" key={register}>
+                <div className={`register${readRegister === register ? ' signal-read' : ''}${writtenRegister === register ? ' signal-write' : ''}`} key={`${register}-${machine.pc}`}>
                   <dt>{register}</dt>
-                  <dd>{machine.registers[register]}</dd>
+                  <dd>{machine.registers[register].toString().padStart(3, '0')}<small>{hex(machine.registers[register])}</small>
+                  <meter min={0} max={255} value={machine.registers[register]} aria-label={`${register} byte value`} />
+                  <span className="register-role">{writtenRegister === register ? '↓ WRITE' : readRegister === register ? '↑ READ' : 'BYTE'}</span></dd>
                 </div>
               ))}
             </dl>
-            <p className="flag-value">Zero flag (ZF): <strong>{machine.zf ? '1' : '0'}</strong></p>
-            <p className="step-explanation" aria-live="polite">
+            <div className="machine-indicators"><span>PC <strong>{machine.pc.toString().padStart(2, '0')}</strong></span><span>ZF <strong>{machine.zf ? '1' : '0'}</strong></span><span className={machine.halted ? 'halted' : ''}>{programMode === 'edit' ? '● EDITING' : machine.halted ? '■ HALTED' : hasNextInstruction ? '● READY' : '■ COMPLETE'}</span></div>
+            <p className="step-explanation" aria-live="polite" aria-atomic="true">
               {describeEvent(lastEvent)}
             </p>
           </section>
 
-          <section className="panel" aria-labelledby="stack-title">
-            <h2 id="stack-title">Stack</h2>
-            <p className="panel-note">The stack grows toward lower addresses: 0xFF, 0xFE, 0xFD…</p>
+          <section className="panel stack-panel" aria-labelledby="stack-title">
+            <div className="module-heading"><h2 id="stack-title"><span>04</span> Stack</h2></div>
+            <p className="panel-note">Grows downward: FF → FE → FD</p>
             <p className="stack-usage" aria-live="polite">
               Stack: {stackAddresses.length} {stackAddresses.length === 1 ? 'byte' : 'bytes'} used · {machine.sp} bytes remaining
             </p>
             <p className="stack-pointer">SP: {hex(machine.sp)}{machine.sp === MEMORY_SIZE ? ' (empty; just past the end of memory)' : ' (top of stack)'}</p>
+            <meter className="stack-meter" min={0} max={MEMORY_SIZE} value={stackAddresses.length} aria-label="Stack bytes used" />
             <h3>Stack close-up <span>(top first)</span></h3>
+            <div className="stack-content" tabIndex={0} role="region" aria-label="Stack contents">
             {stackAddresses.length === 0 ? (
               <p className="empty-stack">No values pushed yet.</p>
             ) : (
@@ -209,11 +222,12 @@ function App() {
                 </tbody>
               </table>
             )}
+            </div>
           </section>
 
-          <section className="panel" aria-labelledby="memory-title">
-            <h2 id="memory-title">Memory</h2>
-            <p className="panel-note">All 256 memory bytes, shown in hexadecimal. The stack above is another view of this same memory.</p>
+          <section className="panel memory-panel" aria-labelledby="memory-title">
+            <div className="module-heading"><h2 id="memory-title"><span>03</span> Memory</h2><span className="module-label">16 × 16 / HEX + ASCII</span></div>
+            <p className="panel-note">256 bytes · Data and stack share this memory.</p>
             <div className="memory-legend">
               <span><span className="legend-swatch stack-used" aria-hidden="true" /> Occupied stack</span>
               <span><span className="legend-swatch stack-top" aria-hidden="true" /> SP: top of stack</span>
@@ -241,8 +255,9 @@ function App() {
                         return (
                           <td
                             key={offset}
-                            className={isStack ? `stack-used${isTop ? ' stack-top' : ''}` : undefined}
-                            aria-label={`${hex(address)}: ${hex(value)}${isTop ? ', SP, top of stack' : isStack ? ', occupied stack' : ''}`}
+                            className={`${isStack ? 'stack-used' : ''}${isTop ? ' stack-top' : ''}${address === readAddress ? ' signal-read' : ''}${address === writtenAddress ? ' signal-write' : ''}`}
+                            title={`${hex(address)} · decimal ${value}${address === writtenAddress ? ' · last write' : address === readAddress ? ' · last read' : ''}`}
+                            aria-label={`${hex(address)}: ${hex(value)}${address === writtenAddress ? ', last write' : address === readAddress ? ', last read' : ''}${isTop ? ', SP, top of stack' : isStack ? ', occupied stack' : ''}`}
                           >
                             {value.toString(16).toUpperCase().padStart(2, '0')}
                             {isTop && <span className="stack-top-label">SP</span>}
@@ -259,6 +274,12 @@ function App() {
             </div>
           </section>
         </div>
+        <footer className="signal-legend" aria-label="Signal colour legend">
+          <span><i className="cue-next" /> NEXT INSTRUCTION</span>
+          <span><i className="cue-read" /> READ / SOURCE</span>
+          <span><i className="cue-write" /> WRITE / DESTINATION</span>
+          <span className="legend-note">Signals hold until the next step.</span>
+        </footer>
       </div>
     </main>
   )

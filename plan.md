@@ -26,6 +26,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
+- [x] Restyle the workspace as a compact instrument rack: viewport-sized desktop layout, internally scrolling program/stack, event-driven read/write cues, and reduced-motion support. Preserve execution behavior and the instruction reference.
+
 - [x] Give each instruction parser its specific instruction return type, following the MOV parser.
 
 - [x] Extract per-instruction parsers and shared operand validation in `program.ts`, following the machine handler pattern while preserving parser behavior.
@@ -54,7 +56,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [ ] **`CALL` and `RET`:** use the stack for return addresses, define address representation and stack-overflow/underflow faults, then show calls and returns in the program view.
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
 - [ ] **Continuous execution:** add Run/Pause and a speed control while preserving the same step behaviour.
-- [ ] **Movement cues:** use execution events to highlight reads and writes, then add optional motion that can be reduced or disabled.
+- [ ] **Movement cues:** extend the persistent read/write highlights with transfer motion between panels and explicit flag/stack-pointer change cues; retain reduced-motion support.
 - [ ] **Byte inspector:** let a learner select a memory byte and see its address, hex, unsigned decimal, binary, and ASCII interpretations.
 
 ## Later milestones
@@ -65,6 +67,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - Design a memory-mapped display and revisit the memory budget before attempting Conway's Game of Life.
 
 ## Decisions so far
+
+The workspace uses an instrument-rack layout on desktop (1100px and wider, with at least 600px height), with internal overflow for long content. Smaller viewports reflow to preserve readable controls. Cyan means next instruction, amber means last read, mint means last write, and violet marks stack occupancy. Event highlights persist until the next step or reset; register write pulses respect reduced-motion preferences. Build and existing tests pass; browser layout verification remains pending.
 
 The current machine uses zero-based instruction indices in `PC`. `MOV` accepts an unsigned byte (`0` through `255`), advances `PC` by one, and leaves `ZF`, `SP`, and memory unchanged. The empty downward-growing stack starts with `SP` one past the final byte, at `256`; its push behaviour will be defined when `PUSH` is implemented.
 
