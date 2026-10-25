@@ -52,6 +52,7 @@ function App() {
   const [source, setSource] = useState(SAMPLE_SOURCE)
   const [programMode, setProgramMode] = useState<'edit' | 'debug'>('edit')
   const { program, errors } = parseProgram(source)
+  const lineNumberWidth = `${String(program.at(-1)?.lineNumber ?? 1).length}ch`
   const [execution, setExecution] = useState<ExecutionView>(() => ({
     machine: createInitialState(),
     lastEvent: null,
@@ -157,7 +158,7 @@ function App() {
                     className={hasNextInstruction && index === machine.pc ? 'program-line active' : 'program-line'}
                     aria-current={hasNextInstruction && index === machine.pc ? 'step' : undefined}
                   >
-                    <span className="line-number">{line.lineNumber}</span>
+                    <span className="line-number" style={{ width: lineNumberWidth }}>{line.lineNumber}</span>
                     <code>{line.source}</code>
                     {hasNextInstruction && index === machine.pc && <span className="next-marker">Next</span>}
                   </li>

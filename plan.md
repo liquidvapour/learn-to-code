@@ -53,6 +53,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
   - [x] Update README, editor syntax help, the in-app reference, and `instruction-reference.md` to include implemented `LOAD` behaviour. Extend the sample and its execution test to read back the stored byte.
   - [x] Verify in the browser that stepping the sample through `LOAD` highlights memory address 0 as read and R3 as written, shows the memory-read explanation, and clears these cues on the next step or reset. Confirmed by the user.
 
+- [x] Give debug source line numbers a shared, right-aligned, non-shrinking gutter sized for the largest source line number, keeping code aligned past lines 9 and 99. TypeScript and production build pass; browser verification remains pending.
+
 ## Next small steps
 
 - [ ] **`SUB`:** add 8-bit subtraction, define its wraparound behaviour, and decide whether it updates `ZF`.
@@ -60,6 +62,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [ ] **`JMP` and `JZ`:** introduce instruction addresses and conditional control flow. Define valid jump targets and show where control moves.
 - [ ] **`POP`:** remove the top byte from the downward-growing stack into a register. Define empty-stack behaviour.
 - [ ] **`CALL` and `RET`:** use the stack for return addresses, define address representation and stack-overflow/underflow faults, then show calls and returns in the program view.
+- [ ] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation.
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
 - [ ] **Continuous execution:** add Run/Pause and a speed control while preserving the same step behaviour.
 - [ ] **Movement cues:** extend the persistent read/write highlights with transfer motion between panels and explicit flag/stack-pointer change cues; retain reduced-motion support.
