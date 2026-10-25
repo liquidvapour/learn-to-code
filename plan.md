@@ -24,8 +24,6 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] Highlight occupied stack bytes and the top at `SP` in memory, show used and remaining capacity, and keep a stack close-up.
 - [x] Add an editable program with whole-program validation, source line errors, reset on edits, and sample restoration.
 
-## Next small steps
-
 - [x] Add `;` end-of-line and comment-only source comments: preserve source text and line numbers, test parsing and execution, and update the language and in-app references.
 
 - [x] Restyle the workspace as a compact instrument rack: viewport-sized desktop layout, internally scrolling program/stack, event-driven read/write cues, and reduced-motion support. Preserve execution behavior and the instruction reference.
@@ -47,10 +45,15 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] **`STORE`:**
   - [x] Add a register-to-memory write with byte-address validation, execution events, and core tests.
   - [x] Parse `STORE register, address`, document its syntax, and demonstrate decimal `65` appearing as hex `41` and ASCII `A`.
-- [ ] **`LOAD`:**
-  - [ ] Add memory-to-register execution with byte-address validation, a source-address execution event, and core tests; preserve `SP` and `ZF`.
-  - [ ] Parse `LOAD register, address`, document decimal addresses, and extend the sample to read back the stored byte.
-  - [ ] Highlight the source memory cell and destination register after a load.
+- [x] Add `LOAD` execution and decimal-address parsing, with basic core/parser tests and a register-write event identifying the source address.
+- [x] Wire `LOAD` source-memory and destination-register highlights and the memory-read explanation into the interface; browser verification remains pending.
+
+## Next small steps
+
+- [ ] **Finish `LOAD`:**
+  - [ ] Correct the core address error (`STORE` → `LOAD`), parser address error (`MOV value` → `LOAD address`), and unsupported-instruction help to include `LOAD`. Add core/parser coverage for address endpoints, invalid operands, preserved state (`SP`, `ZF`, memory, and other registers), and `PC` advancement.
+  - [ ] Update README, editor syntax help, the in-app reference, and `instruction-reference.md` to include implemented `LOAD` behaviour. Extend the sample and its execution test to read back the stored byte.
+  - [ ] Verify the source-memory and destination-register highlights in the browser.
 - [ ] **`SUB`:** add 8-bit subtraction, define its wraparound behaviour, and decide whether it updates `ZF`.
 - [ ] **`CMP`:** compare two registers without changing them, then define precisely how it sets `ZF`.
 - [ ] **`JMP` and `JZ`:** introduce instruction addresses and conditional control flow. Define valid jump targets and show where control moves.
@@ -72,7 +75,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 The workspace uses an instrument-rack layout on desktop (1100px and wider, with at least 600px height), with internal overflow for long content. Smaller viewports reflow to preserve readable controls. Cyan means next instruction, amber means last read, mint means last write, and violet marks stack occupancy. Event highlights persist until the next step or reset; register write pulses respect reduced-motion preferences. Build and existing tests pass; browser layout verification remains pending.
 
-The current machine uses zero-based instruction indices in `PC`. `MOV` accepts an unsigned byte (`0` through `255`), advances `PC` by one, and leaves `ZF`, `SP`, and memory unchanged. The empty downward-growing stack starts with `SP` one past the final byte, at `256`; its push behaviour will be defined when `PUSH` is implemented.
+The current machine uses zero-based instruction indices in `PC`. `MOV` accepts an unsigned byte (`0` through `255`), advances `PC` by one, and leaves `ZF`, `SP`, and memory unchanged. The empty downward-growing stack starts with `SP` one past the final byte, at `256`.
 
 `ADD` stores the low 8 bits of the sum in its destination register and sets `ZF` when the stored result is zero.
 
@@ -81,6 +84,8 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 `HALT` advances `PC` past itself and sets `halted`. Further execution is rejected until reset.
 
 `STORE` copies a register byte to an integer memory address from 0 through 255, advances `PC`, and emits a memory-write event containing the previous byte. It copies memory before writing and preserves registers, `SP`, and `ZF`. Any memory byte is addressable, including stack bytes. Source syntax is `STORE register, address`, with decimal addresses from 0 through 255. The sample writes decimal 65 to address 0, shown as hex `41` and ASCII `A`.
+
+`LOAD` copies the byte at an integer memory address from 0 through 255 into a register, advances `PC`, and emits a register-write event identifying the source address. It preserves memory, other registers, `SP`, and `ZF`. Source syntax is `LOAD register, address`, with decimal addresses. Execution, parsing, and UI event handling exist; error wording, broader tests, documentation, sample integration, and browser verification remain unfinished.
 
 Program source accepts case-insensitive instructions and registers, flexible whitespace, blank lines, and `;` comments through the end of a line. Comments may follow instructions or occupy whole lines; comment-only lines do not consume instruction indices. Original source text and line numbers are preserved. `MOV` immediates are decimal integers from 0 to 255. Any parse error blocks the whole program. Source line numbers stay separate from zero-based `PC`; editing resets execution, while Reset preserves source.
 
