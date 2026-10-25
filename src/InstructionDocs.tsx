@@ -46,6 +46,13 @@ export default function InstructionDocs() {
           <p>Address 0 (0x00) holds decimal 65. The first cell in the memory grid shows hex 41, and the ASCII column shows A. R2 still holds 65.</p>
         </section>
         <section>
+          <h3>LOAD — read memory into a register</h3>
+          <p><code>LOAD register, address</code></p>
+          <p>Copy the byte at the specified decimal memory address into the destination register, replacing its previous value. Memory, other registers, SP, and ZF stay unchanged. Every address from 0 to 255 is readable, including occupied stack bytes.</p>
+          <pre><code>{'MOV R2, 65\nSTORE R2, 0\nLOAD R3, 0'}</code></pre>
+          <p>R3 becomes 65, while address 0 and R2 still hold 65. The source memory cell is highlighted as a read and R3 as a write. Addresses below 0, above 255, or with a fractional part are rejected.</p>
+        </section>
+        <section>
           <h3>PUSH — copy a register onto the stack</h3>
           <p><code>PUSH register</code></p>
           <p>Decrease SP by one, then write the register byte at the new SP address. Registers and ZF stay unchanged. A push with SP = 0 is rejected as a stack overflow.</p>
@@ -61,8 +68,8 @@ export default function InstructionDocs() {
 
       <section aria-labelledby="sample-walkthrough">
         <h2 id="sample-walkthrough">Sample walkthrough</h2>
-        <pre><code>{'MOV R0, 5\nMOV R1, 7\nADD R0, R1\nPUSH R0\nMOV R2, 65\nSTORE R2, 0\nHALT'}</code></pre>
-        <p>The first two instructions set R0 to 5 and R1 to 7. ADD makes R0 = 12 and ZF = 0. PUSH copies 12 to address 255 and makes SP = 255. MOV sets R2 = 65, then STORE copies it to address 0. HALT stops with PC = 7. Look for 41 and A in the first memory row, and 0C in the stack close-up.</p>
+        <pre><code>{'MOV R0, 5\nMOV R1, 7\nADD R0, R1\nPUSH R0\nMOV R2, 65\nSTORE R2, 0\nLOAD R3, 0\nHALT'}</code></pre>
+        <p>The first two instructions set R0 to 5 and R1 to 7. ADD makes R0 = 12 and ZF = 0. PUSH copies 12 to address 255 and makes SP = 255. MOV sets R2 = 65, then STORE copies it to address 0. LOAD reads that byte back into R3, making R3 = 65 while memory stays unchanged. HALT stops with PC = 8. Look for 41 and A in the first memory row, and 0C in the stack close-up.</p>
         <p><a href="#machine">Return to the machine</a> to step through the sample. Opening this reference preserves your source and execution state.</p>
       </section>
     </article>

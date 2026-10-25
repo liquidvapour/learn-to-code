@@ -130,8 +130,8 @@ function App() {
                 aria-invalid={errors.length > 0}
               />
               <p className="syntax-help" id="syntax-help">
-                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>STORE R2, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
-                {' '}Registers: R0–R3. MOV values and STORE addresses: decimal 0–255. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
+                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
+                {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
                 {' '}<a href="#instructions">Full instruction reference</a>.
               </p>
               <div id="program-errors" className="program-errors" aria-live="polite">

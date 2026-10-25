@@ -24,7 +24,7 @@ The Implemented column indicates availability through both the machine core and 
 | Instruction | Implemented | Meaning | ZF effect |
 | --- | --- | --- | --- |
 | `MOV destination, value` | Yes | Replace a register with an immediate byte. | Preserved |
-| `LOAD destination, address` | No | Copy a memory byte into a register. | Preserve, per current plan |
+| `LOAD destination, address` | Yes | Copy a memory byte into a register. | Preserved |
 | `STORE source, address` | Yes | Copy a register byte into memory. | Preserved |
 | `ADD destination, source` | Yes | Add register values into the destination, modulo 256. | Set if stored result is zero; otherwise cleared |
 | `SUB destination, source` | No | Subtract source from destination. | Undecided |
@@ -45,9 +45,15 @@ The Implemented column indicates availability through both the machine core and 
 
 ### LOAD
 
-`LOAD R0, 42`: Read memory address `42` into `R0`; preserve `SP` and `ZF`.
+```text
+MOV R2, 65
+STORE R2, 0
+LOAD R3, 0 ; Read the stored byte back
+```
 
-Open decisions and remaining work: Add address validation, a register-write event identifying the source address, parsing, tests, and read highlighting.
+`R3` becomes `65`. Memory, other registers, `SP`, and `ZF` are preserved, and `PC` advances by one. Addresses must be decimal integers from `0` to `255` in source; out-of-range and non-integer addresses are rejected. Any byte can be read, including occupied stack bytes, without removing it from the stack.
+
+Execution emits a register-write event containing the destination register, its previous and new values, and the source memory address. The interface highlights the source memory cell as a read and the destination register as a write, and explains the transfer.
 
 ### STORE
 
