@@ -51,7 +51,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 ## Next small steps
 
 - [ ] **Finish `LOAD`:**
-  - [ ] Correct the core address error (`STORE` → `LOAD`), parser address error (`MOV value` → `LOAD address`), and unsupported-instruction help to include `LOAD`. Add core/parser coverage for address endpoints, invalid operands, preserved state (`SP`, `ZF`, memory, and other registers), and `PC` advancement.
+  - [x] Correct the core address error (`STORE` → `LOAD`), parser address error (`MOV value` → `LOAD address`), and unsupported-instruction help to include `LOAD`. Add core/parser coverage for address endpoints, invalid operands, preserved state (`SP`, `ZF`, memory, and other registers), and `PC` advancement.
   - [ ] Update README, editor syntax help, the in-app reference, and `instruction-reference.md` to include implemented `LOAD` behaviour. Extend the sample and its execution test to read back the stored byte.
   - [ ] Verify the source-memory and destination-register highlights in the browser.
 - [ ] **`SUB`:** add 8-bit subtraction, define its wraparound behaviour, and decide whether it updates `ZF`.
@@ -85,7 +85,7 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 
 `STORE` copies a register byte to an integer memory address from 0 through 255, advances `PC`, and emits a memory-write event containing the previous byte. It copies memory before writing and preserves registers, `SP`, and `ZF`. Any memory byte is addressable, including stack bytes. Source syntax is `STORE register, address`, with decimal addresses from 0 through 255. The sample writes decimal 65 to address 0, shown as hex `41` and ASCII `A`.
 
-`LOAD` copies the byte at an integer memory address from 0 through 255 into a register, advances `PC`, and emits a register-write event identifying the source address. It preserves memory, other registers, `SP`, and `ZF`. Source syntax is `LOAD register, address`, with decimal addresses. Execution, parsing, and UI event handling exist; error wording, broader tests, documentation, sample integration, and browser verification remain unfinished.
+`LOAD` copies the byte at an integer memory address from 0 through 255 into a register, advances `PC`, and emits a register-write event identifying the source address. It preserves memory, other registers, `SP`, and `ZF`. Source syntax is `LOAD register, address`, with decimal addresses. Execution, parsing, UI event handling, instruction-specific errors, and core/parser coverage are complete. Tests cover address endpoints, invalid operands, state preservation, PC advancement, and memory-source events. Documentation, sample integration, and browser verification remain unfinished.
 
 Program source accepts case-insensitive instructions and registers, flexible whitespace, blank lines, and `;` comments through the end of a line. Comments may follow instructions or occupy whole lines; comment-only lines do not consume instruction indices. Original source text and line numbers are preserved. `MOV` immediates are decimal integers from 0 to 255. Any parse error blocks the whole program. Source line numbers stay separate from zero-based `PC`; editing resets execution, while Reset preserves source.
 

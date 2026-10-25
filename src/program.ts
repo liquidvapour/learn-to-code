@@ -54,7 +54,7 @@ function store(operands: string): STOREInstruction {
 
 function load(operands: string): LOADInstruction {
   const [destination, address] = operandPair('LOAD', operands, 'address')
-  return { operation: 'LOAD', register: register(destination), address: byte(address, 'MOV value') }
+  return { operation: 'LOAD', register: register(destination), address: byte(address, 'LOAD address') }
 }
 
 function push(operands: string): PUSHInstruction {
@@ -88,7 +88,7 @@ function parseInstruction(text: string): Instruction {
     case 'HALT':
       return halt(operands)
     default:
-      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, STORE, PUSH, or HALT.`)
+      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, STORE, LOAD, PUSH, or HALT.`)
   }
 }
 

@@ -164,24 +164,76 @@ test('STORE accepts address endpoints and rejects invalid addresses and register
   assert.equal(state.pc, 0)
 })
 
-test('LOAD reads one addressed byte, overwrites one register byte, preserves other state, and reports the read', () => {
-  const initial = createInitialState()
-  const state = {
-    ...initial,
-  }
-  state.memory[42] = 9
-  state.memory[43] = 17
-  const instruction = { operation: 'LOAD', register: 'R2', address: 42 }
-  const result = executeInstruction(state, instruction)
+test('LOAD reads one byte, preserves other state and its input, and reports the source', () => {
+  for (const zf of [false, true]) {
+    const state = {
+      ...createInitialState(),
+      registers: { R0: 11, R1: 22, R2: 65, R3: 44 },
+      pc: 3,
+      sp: 250,
+      zf,
+    }
+    state.memory[42] = 9
+    state.memory[43] = 17
+    const before = structuredClone(state)
+    const instruction = { operation: 'LOAD', register: 'R2', address: 42 }
+    const result = executeInstruction(state, instruction)
 
-  assert.equal(result.state.registers.R2, 9)
-  assert.equal(result.state.memory, state.memory)
-  assert.equal(state.pc, 0)
-  assert.deepEqual(result.events, [{
-    kind: 'register-write', register: 'R2', previous: 0, value: 9, source: 'memory', address: 42,
-  }])
+    assert.deepEqual(result, executeInstruction(state, instruction))
+    assert.deepEqual(result.state, {
+      ...before,
+      registers: { ...before.registers, R2: 9 },
+      pc: 4,
+    })
+    assert.equal(result.state.memory, state.memory)
+    assert.deepEqual(state, before)
+    assert.deepEqual(result.events, [{
+      kind: 'register-write', register: 'R2', previous: 65, value: 9, source: 'memory', address: 42,
+    }])
+  }
 })
 
+test('LOAD accepts address and byte endpoints, including occupied stack memory', () => {
+  const state = {
+    ...createInitialState(),
+    registers: { R0: 12, R1: 23, R2: 34, R3: 45 },
+    sp: 255,
+    zf: true,
+  }
+  state.memory[255] = 255
+  for (const address of [0, 255]) {
+    for (const register of ['R0', 'R1', 'R2', 'R3']) {
+      const result = executeInstruction(state, { operation: 'LOAD', register, address })
+      assert.deepEqual(result.state, {
+        ...state,
+        registers: { ...state.registers, [register]: state.memory[address] },
+        pc: 1,
+      })
+      assert.deepEqual(result.events, [{
+        kind: 'register-write', register, previous: state.registers[register],
+        value: state.memory[address], source: 'memory', address,
+      }])
+    }
+  }
+})
+
+test('LOAD rejects invalid addresses and registers without changing state', () => {
+  const state = createInitialState()
+  state.memory[0] = 65
+  const before = structuredClone(state)
+  for (const address of [-1, 256, 1.5, Number.NaN, Infinity, -Infinity]) {
+    assert.throws(
+      () => executeInstruction(state, { operation: 'LOAD', register: 'R0', address }),
+      { name: 'RangeError', message: 'LOAD address must be an integer from 0 to 255' },
+    )
+    assert.deepEqual(state, before)
+  }
+  assert.throws(
+    () => executeInstruction(state, { operation: 'LOAD', register: 'R4', address: 0 }),
+    /Unknown register: R4/,
+  )
+  assert.deepEqual(state, before)
+})
 
 test('the five-instruction sample produces 12 on the stack and then halts', () => {
   const instructions = [

@@ -63,13 +63,38 @@ test('STORE rejects invalid operands with source line errors and blocks the whol
   assert.match(parseProgram('STORE R0, 256').errors[0].message, /STORE address must be a decimal integer from 0 to 255/)
 })
 
-test('LOAD', () => {
-  const { program, errors } = parseProgram('LOAD R1, 0')
-  const { instruction } = program[0]
-  assert.equal(instruction.operation, 'LOAD')
-  assert.equal(instruction.register, 'R1')
-  assert.equal(instruction.address, 0)
+test('LOAD parses decimal address endpoints with flexible case, spacing, and comments', () => {
+  const { program, errors } = parseProgram('; Read bytes\n load r0 , 0 ; First byte\n\tLOAD R3,255 ')
+  assert.deepEqual(errors, [])
+  assert.deepEqual(program.map((line) => line.instruction), [
+    { operation: 'LOAD', register: 'R0', address: 0 },
+    { operation: 'LOAD', register: 'R3', address: 255 },
+  ])
+  assert.deepEqual(program.map((line) => line.lineNumber), [2, 3])
+  assert.equal(program[0].source, 'load r0 , 0 ; First byte')
+})
 
+test('LOAD rejects invalid operands with precise source errors and blocks the whole program', () => {
+  const invalid = [
+    ['R4, 0', 'R4 is not a register. Use R0, R1, R2, or R3.'],
+    ...['-1', '256', '1.5', '0x41', 'NaN', 'Infinity', 'R1'].map((address) => [
+      `R0, ${address}`, 'LOAD address must be a decimal integer from 0 to 255.',
+    ]),
+    ...['R0 1', 'R0,', ', 0', 'R0, 0, 1', ''].map((operands) => [
+      operands, 'Use LOAD register, address.',
+    ]),
+  ]
+  for (const [operands, message] of invalid) {
+    const result = parseProgram(`MOV R0, 65\nLOAD ${operands}\nHALT`)
+    assert.deepEqual(result, { program: [], errors: [{ lineNumber: 2, message }] }, operands)
+  }
+})
+
+test('unsupported-instruction help includes LOAD', () => {
+  assert.deepEqual(parseProgram('UNKNOWN').errors, [{
+    lineNumber: 1,
+    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, STORE, LOAD, PUSH, or HALT.',
+  }])
 })
 
 test('whitespace, case, blank lines, and byte endpoints preserve source mapping', () => {

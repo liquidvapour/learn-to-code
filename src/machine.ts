@@ -190,7 +190,7 @@ function store(state: MachineState, instruction: STOREInstruction) {
 function load(state: MachineState, instruction: LOADInstruction) {
   const { register, address } = instruction
   if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
-    throw new RangeError('STORE address must be an integer from 0 to 255')
+    throw new RangeError('LOAD address must be an integer from 0 to 255')
   }
   const memory = state.memory.slice()
   const value = memory[address]
