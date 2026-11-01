@@ -30,6 +30,9 @@ function asciiCharacter(value: number) {
 function describeEvent(event: MachineEvent | null) {
   if (event === null) return 'Press Step to execute the highlighted instruction.'
   if (event.kind === 'halt') return 'HALT stopped execution. Reset to run again.'
+  if (event.kind === 'comparison') {
+    return `${event.register} (${event.value}) ${event.equal ? '=' : '≠'} ${event.sourceRegister} (${event.sourceValue}) → ZF = ${Number(event.equal)}`
+  }
   if (event.kind === 'memory-write') {
     return `${event.sourceRegister} → memory ${hex(event.address)}: ${event.previous} → ${event.value}`
   }

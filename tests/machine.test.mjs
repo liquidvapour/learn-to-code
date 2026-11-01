@@ -329,3 +329,66 @@ test('SUB rejects invalid registers and halted execution without changing state'
     /Machine is halted/,
   )
 })
+
+
+test('CMP sets ZF from equality, advances PC, and preserves other state and its input', () => {
+  for (const [value, sourceValue] of [[0, 0], [255, 255], [0, 255], [255, 0], [12, 7], [7, 12]]) {
+    for (const zf of [false, true]) {
+      const state = {
+        ...createInitialState(),
+        registers: { R0: value, R1: sourceValue, R2: 42, R3: 17 },
+        pc: 3,
+        sp: 250,
+        zf,
+      }
+      state.memory[250] = 65
+      const before = structuredClone(state)
+      const instruction = { operation: 'CMP', register: 'R0', source: 'R1' }
+      const result = executeInstruction(state, instruction)
+
+      assert.deepEqual(result, executeInstruction(state, instruction))
+      assert.deepEqual(result.state, { ...before, pc: 4, zf: value === sourceValue })
+      assert.equal(result.state.registers, state.registers)
+      assert.equal(result.state.memory, state.memory)
+      assert.deepEqual(state, before)
+      assert.deepEqual(result.events, [{
+        kind: 'comparison', register: 'R0', sourceRegister: 'R1',
+        value, sourceValue, equal: value === sourceValue,
+      }])
+    }
+  }
+})
+
+test('CMP supports every register pair, including comparing a register with itself', () => {
+  const state = { ...createInitialState(), registers: { R0: 0, R1: 7, R2: 7, R3: 255 } }
+  for (const register of ['R0', 'R1', 'R2', 'R3']) {
+    for (const source of ['R0', 'R1', 'R2', 'R3']) {
+      const result = executeInstruction(state, { operation: 'CMP', register, source })
+      assert.deepEqual(result.state.registers, state.registers)
+      assert.equal(result.state.zf, state.registers[register] === state.registers[source])
+      assert.deepEqual(result.events, [{
+        kind: 'comparison', register, sourceRegister: source,
+        value: state.registers[register], sourceValue: state.registers[source],
+        equal: state.registers[register] === state.registers[source],
+      }])
+    }
+  }
+})
+
+test('CMP rejects invalid registers and halted execution without changing state', () => {
+  const state = createInitialState()
+  const before = structuredClone(state)
+  for (const [register, source] of [['R4', 'R0'], ['R0', 'R4']]) {
+    assert.throws(
+      () => executeInstruction(state, { operation: 'CMP', register, source }),
+      { name: 'RangeError', message: 'Unknown register: R4' },
+    )
+    assert.deepEqual(state, before)
+  }
+  const halted = { ...state, halted: true }
+  assert.throws(
+    () => executeInstruction(halted, { operation: 'CMP', register: 'R0', source: 'R1' }),
+    /Machine is halted/,
+  )
+  assert.deepEqual(halted, { ...before, halted: true })
+})

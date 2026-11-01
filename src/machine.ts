@@ -7,6 +7,7 @@ export type Register = (typeof REGISTER_NAMES)[number]
 const InstrictionMOV = 'MOV'
 const InstrictionADD = 'ADD'
 const InstrictionSUB = 'SUB'
+const InstrictionCMP = 'CMP'
 const InstrictionSTORE = 'STORE'
 const InstrictionLOAD = 'LOAD'
 const InstrictionPUSH = 'PUSH'
@@ -26,6 +27,12 @@ export type ADDInstruction = Readonly<{
 
 export type SUBInstruction = Readonly<{
   operation: 'SUB'
+  register: Register
+  source: Register
+}>
+
+export type CMPInstruction = Readonly<{
+  operation: 'CMP'
   register: Register
   source: Register
 }>
@@ -58,6 +65,7 @@ export type Instruction =
   | MOVInstruction 
   | ADDInstruction
   | SUBInstruction
+  | CMPInstruction
   | STOREInstruction
   | LOADInstruction 
   | PUSHInstruction 
@@ -93,6 +101,13 @@ export type MachineEvent = Readonly<({
   previous: number
   value: number
   sourceRegister: Register
+}> | Readonly<{
+  kind: 'comparison'
+  register: Register
+  sourceRegister: Register
+  value: number
+  sourceValue: number
+  equal: boolean
 }> | Readonly<{
   kind: 'halt'
 }>
@@ -187,6 +202,20 @@ function subtract(state: MachineState, instruction: SUBInstruction) {
   )
 }
 
+function compare(state: MachineState, instruction: CMPInstruction) {
+  const value = readRegister(state, instruction.register)
+  const sourceValue = readRegister(state, instruction.source)
+  const equal = value === sourceValue
+  return completeStep(state, { zf: equal }, {
+    kind: 'comparison',
+    register: instruction.register,
+    sourceRegister: instruction.source,
+    value,
+    sourceValue,
+    equal,
+  })
+}
+
 function store(state: MachineState, instruction: STOREInstruction) {
   const { address } = instruction
   if (!Number.isInteger(address) || address < 0 || address >= MEMORY_SIZE) {
@@ -252,6 +281,8 @@ export function executeInstruction(state: MachineState, instruction: Instruction
       return add(state, instruction)
     case InstrictionSUB:
       return subtract(state, instruction)
+    case InstrictionCMP:
+      return compare(state, instruction)
     case InstrictionSTORE:
       return store(state, instruction)
     case InstrictionLOAD:
