@@ -10,7 +10,7 @@ The Implemented column indicates availability through both the machine core and 
 - 256 memory bytes at addresses `0`–`255`, initially zero. Stack and ordinary data share this memory; no separate regions are enforced yet.
 - `PC` starts at `0` and indexes instructions, excluding blank and comment-only source lines. Instructions are separate from data memory.
 - `SP` starts at `256` (empty stack). The stack grows downward; after a push, `SP` points to the top byte.
-- `ZF` starts false (`0`). `ADD` and `SUB` update it.
+- `ZF` starts false (`0`). `ADD`, `SUB`, and `CMP` update it.
 - One instruction per line; blank lines are ignored. Instructions and register names are case-insensitive. Whitespace is flexible; two operands require a comma.
 - Values and memory addresses in source use decimal integers from `0` to `255`. Hex literals and labels are not supported.
 - A semicolon (`;`) starts a comment extending to the end of the line, with or without preceding whitespace. Comments may follow instructions or occupy a whole line. Comment-only lines do not produce instructions or advance `PC`. Original source text and line numbers are preserved for display and errors.
@@ -28,7 +28,7 @@ The Implemented column indicates availability through both the machine core and 
 | `STORE source, address` | Yes | Copy a register byte into memory. | Preserved |
 | `ADD destination, source` | Yes | Add register values into the destination, modulo 256. | Set if stored result is zero; otherwise cleared |
 | `SUB destination, source` | Yes | Subtract source from destination, modulo 256. | Set if stored result is zero; otherwise cleared |
-| `CMP destination, source` | No | Compare two registers without changing them. | Intended to indicate equality; exact rule pending |
+| `CMP destination, source` | Yes | Compare two registers without changing them. | Set if values are equal; otherwise cleared |
 | `JMP target` | No | Jump unconditionally. | Undecided |
 | `JZ target` | No | Jump when `ZF` is set. | Undecided |
 | `PUSH source` | Yes | Decrement `SP`, then copy the register into memory at `SP`. | Preserved |
@@ -91,9 +91,19 @@ Both operands must be registers. Execution emits a subtraction register-write ev
 
 ### CMP
 
-`CMP R0, R1`: Compare values without modifying registers.
+```text
+MOV R0, 5
+MOV R1, 5
+CMP R0, R1
+MOV R1, 7
+CMP R0, R1
+CMP R0, R0
+HALT
+```
 
-Open decisions and remaining work: Specify exactly when `ZF` is set and cleared.
+The comparisons set `ZF` to `1` for equal values, clear it to `0` for unequal values, then set it to `1` for self-comparison. `R0` stays `5` and `R1` ends at `7`. Each comparison advances `PC` and preserves registers, memory, and `SP`.
+
+Both operands must be registers. Execution emits a comparison event containing both register names, their values, and the equality result. The interface highlights both operands as reads and explains the comparison and resulting `ZF`.
 
 ### JMP
 

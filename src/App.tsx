@@ -72,8 +72,9 @@ function App() {
   useEffect(() => {
     activeLine.current?.scrollIntoView({ block: 'nearest' })
   }, [machine.pc, programMode])
-  const readRegister = lastEvent?.kind === 'memory-write' ? lastEvent.sourceRegister
-    : lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction') ? lastEvent.sourceRegister : null
+  const readRegisters = lastEvent?.kind === 'comparison' ? [lastEvent.register, lastEvent.sourceRegister]
+    : lastEvent?.kind === 'memory-write' ? [lastEvent.sourceRegister]
+      : lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction') ? [lastEvent.sourceRegister] : []
   const writtenRegister = lastEvent?.kind === 'register-write' ? lastEvent.register : null
   const readAddress = lastEvent?.kind === 'register-write' && lastEvent.source === 'memory' ? lastEvent.address : null
   const writtenAddress = lastEvent?.kind === 'memory-write' ? lastEvent.address : null
@@ -140,7 +141,7 @@ function App() {
                 aria-invalid={errors.length > 0}
               />
               <p className="syntax-help" id="syntax-help">
-                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
+                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
                 {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
                 {' '}<a href="#instructions">Full instruction reference</a>.
               </p>
@@ -192,11 +193,11 @@ function App() {
             <div className="module-heading"><h2 id="machine-title"><span>02</span> Registers</h2><span className="module-label">UNSIGNED / 8 BIT</span></div>
             <dl className="register-list">
               {REGISTER_NAMES.map((register) => (
-                <div className={`register${readRegister === register ? ' signal-read' : ''}${writtenRegister === register ? ' signal-write' : ''}`} key={`${register}-${machine.pc}`}>
+                <div className={`register${readRegisters.includes(register) ? ' signal-read' : ''}${writtenRegister === register ? ' signal-write' : ''}`} key={`${register}-${machine.pc}`}>
                   <dt>{register}</dt>
                   <dd>{machine.registers[register].toString().padStart(3, '0')}<small>{hex(machine.registers[register])}</small>
                     <meter min={0} max={255} value={machine.registers[register]} aria-label={`${register} byte value`} />
-                    <span className="register-role">{writtenRegister === register ? '↓ WRITE' : readRegister === register ? '↑ READ' : 'BYTE'}</span></dd>
+                    <span className="register-role">{writtenRegister === register ? '↓ WRITE' : readRegisters.includes(register) ? '↑ READ' : 'BYTE'}</span></dd>
                 </div>
               ))}
             </dl>

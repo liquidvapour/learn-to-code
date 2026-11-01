@@ -17,7 +17,7 @@ export default function InstructionDocs() {
           <dt>SP — stack pointer</dt>
           <dd>The address of the top stack byte. An empty stack has SP = 256, just beyond memory. PUSH grows the stack toward lower addresses.</dd>
           <dt>ZF — zero flag</dt>
-          <dd>ADD and SUB set this to 1 when their stored result is zero, otherwise 0. All other supported instructions preserve it.</dd>
+          <dd>ADD and SUB set this to 1 when their stored result is zero, otherwise 0. CMP sets it to 1 when its two register values are equal, otherwise 0. All other supported instructions preserve it.</dd>
         </dl>
         <p>Memory addresses run from decimal 0 to 255 (hex 0x00–0xFF). The hex grid and stack close-up show the same memory. Printable ASCII bytes (32–126) appear as characters; other bytes appear as dots.</p>
       </section>
@@ -44,6 +44,13 @@ export default function InstructionDocs() {
           <p>Subtract the source register from the destination and store the result modulo 256: 0 − 1 becomes 255. ZF is 1 exactly when the stored result is zero. Memory, SP, and other registers stay unchanged.</p>
           <pre><code>{'MOV R0, 0\nMOV R1, 1\nSUB R0, R1\nSUB R0, R0\nHALT'}</code></pre>
           <p>The first SUB makes R0 = 255 and ZF = 0, while R1 remains 1. Subtracting R0 from itself then makes R0 = 0 and ZF = 1. The source register is highlighted as a read and the destination as a write.</p>
+        </section>
+        <section>
+          <h3>CMP — compare two registers</h3>
+          <p><code>CMP destination, source</code></p>
+          <p>Compare two register values: set ZF to 1 when equal, otherwise 0. Registers, memory, and SP stay unchanged; PC advances by one. Both operands must be registers.</p>
+          <pre><code>{'MOV R0, 5\nMOV R1, 5\nCMP R0, R1\nMOV R1, 7\nCMP R0, R1\nCMP R0, R0\nHALT'}</code></pre>
+          <p>The comparisons set ZF to 1, then 0, then 1 for self-comparison. R0 stays 5 and R1 ends at 7. Both compared registers are highlighted as reads, and the explanation shows their values and equality result.</p>
         </section>
         <section>
           <h3>STORE — write a register to memory</h3>

@@ -94,10 +94,10 @@ test('LOAD rejects invalid operands with precise source errors and blocks the wh
   }
 })
 
-test('unsupported-instruction help includes SUB and LOAD', () => {
+test('unsupported-instruction help includes CMP, SUB, and LOAD', () => {
   assert.deepEqual(parseProgram('UNKNOWN').errors, [{
     lineNumber: 1,
-    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, STORE, LOAD, PUSH, or HALT.',
+    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, STORE, LOAD, PUSH, or HALT.',
   }])
 })
 
@@ -181,5 +181,60 @@ test('documented SUB example wraps below zero and sets ZF on self-subtraction', 
   assert.equal(steps[3].state.zf, true)
   assert.equal(state.registers.R1, 1)
   assert.equal(state.pc, 5)
+  assert.equal(state.halted, true)
+})
+
+test('CMP parses flexible case, spacing, and comments while preserving source mapping', () => {
+  const { program, errors } = parseProgram('; Compare\n cmp r0 , r1 ; Keep Case\n\tCMP R3,R3 ')
+  assert.deepEqual(errors, [])
+  assert.deepEqual(program.map((line) => line.instruction), [
+    { operation: 'CMP', register: 'R0', source: 'R1' },
+    { operation: 'CMP', register: 'R3', source: 'R3' },
+  ])
+  assert.deepEqual(program.map((line) => line.lineNumber), [2, 3])
+  assert.equal(program[0].source, 'cmp r0 , r1 ; Keep Case')
+})
+
+test('CMP rejects invalid operands and blocks the whole program with precise errors', () => {
+  const invalid = [
+    ['R4, R0', 'R4 is not a register. Use R0, R1, R2, or R3.'],
+    ['R0, R9', 'R9 is not a register. Use R0, R1, R2, or R3.'],
+    ['R0, 1', '1 is not a register. Use R0, R1, R2, or R3.'],
+    ...['', 'R0', 'R0 R1', 'R0,', ', R1', 'R0, R1, R2'].map((operands) => [
+      operands, 'Use CMP register, register.',
+    ]),
+  ]
+  for (const [operands, message] of invalid) {
+    assert.deepEqual(parseProgram(`MOV R0, 5\nCMP ${operands}\nHALT`), {
+      program: [], errors: [{ lineNumber: 2, message }],
+    }, operands)
+  }
+})
+
+
+test('documented CMP example compares equal, unequal, and identical registers', () => {
+  const { program, errors } = parseProgram('MOV R0, 5\nMOV R1, 5\nCMP R0, R1\nMOV R1, 7\nCMP R0, R1\nCMP R0, R0\nHALT')
+  assert.deepEqual(errors, [])
+  let state = createInitialState()
+  const comparisons = []
+  for (const { instruction } of program) {
+    const previous = state
+    const result = executeInstruction(state, instruction)
+    state = result.state
+    if (instruction.operation === 'CMP') {
+      assert.deepEqual(state.registers, previous.registers)
+      assert.deepEqual(state.memory, previous.memory)
+      assert.equal(state.sp, previous.sp)
+      assert.equal(state.pc, previous.pc + 1)
+      comparisons.push(result.events[0])
+    }
+  }
+  assert.deepEqual(comparisons, [
+    { kind: 'comparison', register: 'R0', sourceRegister: 'R1', value: 5, sourceValue: 5, equal: true },
+    { kind: 'comparison', register: 'R0', sourceRegister: 'R1', value: 5, sourceValue: 7, equal: false },
+    { kind: 'comparison', register: 'R0', sourceRegister: 'R0', value: 5, sourceValue: 5, equal: true },
+  ])
+  assert.equal(state.zf, true)
+  assert.equal(state.pc, 7)
   assert.equal(state.halted, true)
 })

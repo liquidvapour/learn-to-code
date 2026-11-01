@@ -4,6 +4,7 @@ import {
   type MOVInstruction,
   type ADDInstruction,
   type SUBInstruction,
+  type CMPInstruction,
   type STOREInstruction,
   type LOADInstruction,
   type PUSHInstruction,
@@ -53,6 +54,11 @@ function subtract(operands: string): SUBInstruction {
   return { operation: 'SUB', register: register(destination), source: register(source) }
 }
 
+function compare(operands: string): CMPInstruction {
+  const [destination, source] = operandPair('CMP', operands, 'register')
+  return { operation: 'CMP', register: register(destination), source: register(source) }
+}
+
 function store(operands: string): STOREInstruction {
   const [destination, address] = operandPair('STORE', operands, 'address')
   return { operation: 'STORE', register: register(destination), address: byte(address, 'STORE address') }
@@ -87,6 +93,8 @@ function parseInstruction(text: string): Instruction {
       return add(operands)
     case 'SUB':
       return subtract(operands)
+    case 'CMP':
+      return compare(operands)
     case 'STORE':
       return store(operands)
     case 'LOAD':
@@ -96,7 +104,7 @@ function parseInstruction(text: string): Instruction {
     case 'HALT':
       return halt(operands)
     default:
-      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, STORE, LOAD, PUSH, or HALT.`)
+      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, CMP, STORE, LOAD, PUSH, or HALT.`)
   }
 }
 
