@@ -6,6 +6,7 @@ import {
   type SUBInstruction,
   type CMPInstruction,
   type JMPInstruction,
+  type JZInstruction,
   type STOREInstruction,
   type LOADInstruction,
   type PUSHInstruction,
@@ -60,11 +61,19 @@ function compare(operands: string): CMPInstruction {
   return { operation: 'CMP', register: register(destination), source: register(source) }
 }
 
-function jump(operands: string): JMPInstruction {
+function branchTarget(operation: string, operands: string): number {
   if (!/^\d+$/.test(operands) || !Number.isSafeInteger(Number(operands))) {
-    throw new Error('JMP target must be an unsigned decimal safe integer.')
+    throw new Error(`${operation} target must be an unsigned decimal safe integer.`)
   }
-  return { operation: 'JMP', target: Number(operands) }
+  return Number(operands)
+}
+
+function jump(operands: string): JMPInstruction {
+  return { operation: 'JMP', target: branchTarget('JMP', operands) }
+}
+
+function jumpIfZero(operands: string): JZInstruction {
+  return { operation: 'JZ', target: branchTarget('JZ', operands) }
 }
 
 function store(operands: string): STOREInstruction {
@@ -103,6 +112,8 @@ function parseInstruction(text: string): Instruction {
       return subtract(operands)
     case 'CMP':
       return compare(operands)
+    case 'JZ':
+      return jumpIfZero(operands)
     case 'JMP':
       return jump(operands)
     case 'STORE':
@@ -114,7 +125,7 @@ function parseInstruction(text: string): Instruction {
     case 'HALT':
       return halt(operands)
     default:
-      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, CMP, JMP, STORE, LOAD, PUSH, or HALT.`)
+      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, CMP, JMP, JZ, STORE, LOAD, PUSH, or HALT.`)
   }
 }
 
@@ -135,8 +146,8 @@ export function parseProgram(source: string): { program: ProgramLine[]; errors: 
   // Bounds need the complete instruction list; syntax errors must be fixed first.
   if (errors.length === 0) {
     for (const { instruction, lineNumber } of program) {
-      if (instruction.operation === 'JMP' && instruction.target >= program.length) {
-        errors.push({ lineNumber, message: `JMP target must identify an instruction from 0 to ${program.length - 1}.` })
+      if ((instruction.operation === 'JMP' || instruction.operation === 'JZ') && instruction.target >= program.length) {
+        errors.push({ lineNumber, message: `${instruction.operation} target must identify an instruction from 0 to ${program.length - 1}.` })
       }
     }
   }

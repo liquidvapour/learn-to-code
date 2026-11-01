@@ -9,6 +9,7 @@ const InstrictionADD = 'ADD'
 const InstrictionSUB = 'SUB'
 const InstrictionCMP = 'CMP'
 const InstrictionJMP = 'JMP'
+const InstrictionJZ = 'JZ'
 const InstrictionSTORE = 'STORE'
 const InstrictionLOAD = 'LOAD'
 const InstrictionPUSH = 'PUSH'
@@ -43,6 +44,11 @@ export type JMPInstruction = Readonly<{
   target: number
 }>
 
+export type JZInstruction = Readonly<{
+  operation: 'JZ'
+  target: number
+}>
+
 export type STOREInstruction = Readonly<{
   operation: 'STORE'
   register: Register
@@ -73,6 +79,7 @@ export type Instruction =
   | SUBInstruction
   | CMPInstruction
   | JMPInstruction
+  | JZInstruction
   | STOREInstruction
   | LOADInstruction 
   | PUSHInstruction 
@@ -117,7 +124,7 @@ export type MachineEvent = Readonly<({
   equal: boolean
 }> | Readonly<{
   kind: 'branch'
-  operation: 'JMP'
+  operation: 'JMP' | 'JZ'
   previousPc: number
   target: number
   nextPc: number
@@ -279,18 +286,20 @@ function push(state: MachineState, instruction: PUSHInstruction) {
   })
 }
 
-function jump(state: MachineState, instruction: JMPInstruction, programLength?: number): StepResult {
+function jump(state: MachineState, instruction: JMPInstruction | JZInstruction, programLength?: number): StepResult {
   if (programLength === undefined || !Number.isSafeInteger(programLength) || programLength < 0) {
-    throw new RangeError('JMP requires a non-negative safe integer program length')
+    throw new RangeError(`${instruction.operation} requires a non-negative safe integer program length`)
   }
   const { target } = instruction
   if (!Number.isSafeInteger(target) || target < 0 || target >= programLength) {
-    throw new RangeError('JMP target must be a safe integer identifying an instruction in the program')
+    throw new RangeError(`${instruction.operation} target must be a safe integer identifying an instruction in the program`)
   }
 
+  const taken = instruction.operation === 'JMP' || state.zf
+  const nextPc = taken ? target : state.pc + 1
   return {
-    state: { ...state, pc: target },
-    events: [{ kind: 'branch', operation: 'JMP', previousPc: state.pc, target, nextPc: target, taken: true }],
+    state: { ...state, pc: nextPc },
+    events: [{ kind: 'branch', operation: instruction.operation, previousPc: state.pc, target, nextPc, taken }],
   }
 }
 
@@ -318,6 +327,7 @@ export function executeInstruction(
     case InstrictionCMP:
       return compare(state, instruction)
     case InstrictionJMP:
+    case InstrictionJZ:
       return jump(state, instruction, programLength)
     case InstrictionSTORE:
       return store(state, instruction)

@@ -13,7 +13,7 @@ export default function InstructionDocs() {
         <p>The machine starts with four zeroed registers, 256 zeroed memory bytes, PC = 0, SP = 256, and ZF = 0.</p>
         <dl>
           <dt>PC — program counter</dt>
-          <dd>The zero-based index of the next instruction, excluding blank and comment-only lines. JMP replaces PC with its target; other supported instructions advance PC by one, including HALT. Debug shows source lines labelled Line and instruction addresses labelled PC.</dd>
+          <dd>The zero-based index of the next instruction, excluding blank and comment-only lines. JMP replaces PC with its target; JZ does so when ZF is 1 and otherwise advances by one. Other supported instructions advance PC by one, including HALT. Debug shows source lines labelled Line and instruction addresses labelled PC.</dd>
           <dt>SP — stack pointer</dt>
           <dd>The address of the top stack byte. An empty stack has SP = 256, just beyond memory. PUSH grows the stack toward lower addresses.</dd>
           <dt>ZF — zero flag</dt>
@@ -59,6 +59,14 @@ export default function InstructionDocs() {
           <pre><code>{'MOV R0, 5\nJMP 3\nMOV R0, 99\nHALT'}</code></pre>
           <p>JMP skips the write of 99 and selects HALT at address 3, leaving R0 = 5. Registers, memory, SP, and ZF stay unchanged. The explanation shows the old and new PC, and Next marks the target.</p>
           <p>Backward and self-jumps are valid. <code>JMP 0</code> alone repeats the same instruction on each Step. Every target must exist, even in unreachable code; invalid targets block the whole program. Jumping just past the last instruction is invalid. Use HALT to stop explicitly.</p>
+        </section>
+        <section>
+          <h3>JZ — jump if the zero flag is set</h3>
+          <p><code>JZ target</code></p>
+          <p>Read ZF: when it is 1, jump to the target instruction; when it is 0, continue to the next instruction. Registers, memory, SP, and ZF stay unchanged. Targets follow the same rules as JMP and must exist even when the jump would not be taken.</p>
+          <pre><code>{'MOV R0, 3\nMOV R1, 1\nSUB R0, R1\nJZ 5\nJMP 2\nHALT'}</code></pre>
+          <p>R0 counts down through 2, 1, and 0. SUB sets ZF when R0 reaches zero, so JZ jumps to HALT at address 5. Otherwise JMP returns to SUB at address 2. The explanation reports whether JZ was taken and ZF is marked READ.</p>
+          <p>JZ also works after CMP: load the value to compare into another register, then use <code>CMP R0, R2</code>. CMP sets ZF when those registers are equal. An untaken final JZ completes the program without setting the halted state.</p>
         </section>
         <section>
           <h3>STORE — write a register to memory</h3>

@@ -97,7 +97,7 @@ test('LOAD rejects invalid operands with precise source errors and blocks the wh
 test('unsupported-instruction help includes JMP, CMP, SUB, and LOAD', () => {
   assert.deepEqual(parseProgram('UNKNOWN').errors, [{
     lineNumber: 1,
-    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, JMP, STORE, LOAD, PUSH, or HALT.',
+    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, JMP, JZ, STORE, LOAD, PUSH, or HALT.',
   }])
 })
 
@@ -292,4 +292,62 @@ test('documented JMP example skips a write and halts at its target', () => {
   assert.equal(state.registers.R0, 5)
   assert.equal(state.pc, 4)
   assert.equal(state.halted, true)
+})
+
+test('JZ parses case, whitespace, comments, and forward/backward/self targets', () => {
+  const { program, errors } = parseProgram('; Heading\r\n jz 002 ; Keep Case\r\n\r\nJZ 0\n; Spacer\nJZ 2')
+  assert.deepEqual(errors, [])
+  assert.deepEqual(program.map(({ instruction }) => instruction), [
+    { operation: 'JZ', target: 2 }, { operation: 'JZ', target: 0 }, { operation: 'JZ', target: 2 },
+  ])
+  assert.deepEqual(program.map(({ lineNumber }) => lineNumber), [2, 4, 6])
+  assert.equal(program[0].source, 'jz 002 ; Keep Case')
+})
+
+test('JZ rejects malformed operands and bounds even when unreachable or initially untaken', () => {
+  for (const target of ['', '-1', '+1', '1.5', '0x1', '1e0', 'NaN', 'Infinity', 'R0', 'label', '0, 1', '0 1', '9007199254740992']) {
+    assert.deepEqual(parseProgram(`; Header\nJZ ${target}\nHALT`), {
+      program: [], errors: [{ lineNumber: 2, message: 'JZ target must be an unsigned decimal safe integer.' }],
+    }, target)
+  }
+  assert.deepEqual(parseProgram('JZ 3\nHALT\n; Unreachable\nJZ 9007199254740991'), {
+    program: [], errors: [
+      { lineNumber: 1, message: 'JZ target must identify an instruction from 0 to 2.' },
+      { lineNumber: 4, message: 'JZ target must identify an instruction from 0 to 2.' },
+    ],
+  })
+  assert.deepEqual(parseProgram('JZ 2\nINVALID\nHALT').errors.map(({ lineNumber }) => lineNumber), [2])
+})
+
+test('JZ accepts targets above 255 and can fall through the program end', () => {
+  const { program, errors } = parseProgram(['JZ 256', ...Array(256).fill('HALT')].join('\n'))
+  assert.deepEqual(errors, [])
+  assert.equal(executeInstruction({ ...createInitialState(), zf: true }, program[0].instruction, program.length).state.pc, 256)
+  const single = parseProgram('JZ 0')
+  assert.deepEqual(single.errors, [])
+  const result = executeInstruction(createInitialState(), single.program[0].instruction, 1)
+  assert.equal(result.state.pc, 1)
+  assert.equal(result.state.halted, false)
+})
+
+test('documented countdown uses JZ to exit and JMP to repeat', () => {
+  const { program, errors } = parseProgram('MOV R0, 3\nMOV R1, 1\nSUB R0, R1\nJZ 5\nJMP 2\nHALT')
+  assert.deepEqual(errors, [])
+  let state = createInitialState()
+  const branches = []
+  const values = []
+  for (let step = 0; step < 12 && !state.halted; step++) {
+    const instruction = program[state.pc].instruction
+    const result = executeInstruction(state, instruction, program.length)
+    state = result.state
+    if (instruction.operation === 'JZ') branches.push(result.events[0].taken)
+    if (instruction.operation === 'SUB') values.push(state.registers.R0)
+  }
+  assert.deepEqual(values, [2, 1, 0])
+  assert.deepEqual(branches, [false, false, true])
+  assert.equal(state.registers.R0, 0)
+  assert.equal(state.registers.R1, 1)
+  assert.equal(state.zf, true)
+  assert.equal(state.halted, true)
+  assert.equal(state.pc, 6)
 })

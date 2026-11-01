@@ -31,6 +31,9 @@ function describeEvent(event: MachineEvent | null) {
   if (event === null) return 'Press Step to execute the highlighted instruction.'
   if (event.kind === 'halt') return 'HALT stopped execution. Reset to run again.'
   if (event.kind === 'branch') {
+    if (event.operation === 'JZ') {
+      return `JZ ${event.target}: ZF = ${Number(event.taken)}, ${event.taken ? 'jump taken' : 'not taken; continue'} — PC ${event.previousPc} → ${event.nextPc}`
+    }
     return `${event.operation} to instruction ${event.target}: PC ${event.previousPc} → ${event.nextPc}`
   }
   if (event.kind === 'comparison') {
@@ -80,6 +83,7 @@ function App() {
     : lastEvent?.kind === 'memory-write' ? [lastEvent.sourceRegister]
       : lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction') ? [lastEvent.sourceRegister] : []
   const writtenRegister = lastEvent?.kind === 'register-write' ? lastEvent.register : null
+  const readZeroFlag = lastEvent?.kind === 'branch' && lastEvent.operation === 'JZ'
   const wroteZeroFlag = lastEvent?.kind === 'comparison'
     || (lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction'))
   const readAddress = lastEvent?.kind === 'register-write' && lastEvent.source === 'memory' ? lastEvent.address : null
@@ -147,8 +151,8 @@ function App() {
                 aria-invalid={errors.length > 0}
               />
               <p className="syntax-help" id="syntax-help">
-                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>JMP 0</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
-                {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. JMP targets: decimal instruction indices starting at 0. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
+                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>JMP 0</code> · <code>JZ 0</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
+                {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. JMP/JZ targets: decimal instruction indices starting at 0. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
                 {' '}<a href="#instructions">Full instruction reference</a>.
               </p>
               <div id="program-errors" className="program-errors" aria-live="polite">
@@ -210,8 +214,8 @@ function App() {
             </dl>
             <div className="machine-indicators">
               <span>PC <strong>{machine.pc.toString().padStart(2, '0')}</strong></span>
-              <span className={`zero-flag${wroteZeroFlag ? ` flag-write flag-${Number(machine.zf)}` : ''}`}>
-                ZF <strong>{machine.zf ? '1' : '0'}</strong>{wroteZeroFlag && <span className="flag-role">↓ WRITE</span>}
+              <span className={`zero-flag${wroteZeroFlag ? ` flag-write flag-${Number(machine.zf)}` : readZeroFlag ? ' signal-read' : ''}`}>
+                ZF <strong>{machine.zf ? '1' : '0'}</strong>{wroteZeroFlag && <span className="flag-role">↓ WRITE</span>}{readZeroFlag && <span className="flag-role">↑ READ</span>}
               </span>
               <span className={machine.halted ? 'halted' : ''}>{programMode === 'edit' ? '● EDITING' : machine.halted ? '■ HALTED' : hasNextInstruction ? '● READY' : '■ COMPLETE'}</span>
             </div>

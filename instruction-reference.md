@@ -15,7 +15,7 @@ The Implemented column indicates availability through both the machine core and 
 - Values and memory addresses in source use decimal integers from `0` to `255`. Hex literals and labels are not supported.
 - A semicolon (`;`) starts a comment extending to the end of the line, with or without preceding whitespace. Comments may follow instructions or occupy a whole line. Comment-only lines do not produce instructions or advance `PC`. Original source text and line numbers are preserved for display and errors.
 - The whole program must parse successfully before execution. Unsupported instructions are rejected, including the planned instructions below.
-- `JMP` replaces `PC` with its target; other supported instructions advance `PC` by one, including `HALT`. Reaching the end without `HALT` is reported as program completion by the interface.
+- `JMP` and taken `JZ` replace `PC` with the target; untaken `JZ` and other supported instructions advance `PC` by one, including `HALT`. Reaching the end without `HALT` is reported as program completion by the interface.
 
 ## Complete instruction set
 
@@ -30,7 +30,7 @@ The Implemented column indicates availability through both the machine core and 
 | `SUB destination, source` | Yes | Subtract source from destination, modulo 256. | Set if stored result is zero; otherwise cleared |
 | `CMP destination, source` | Yes | Compare two registers without changing them. | Set if values are equal; otherwise cleared |
 | `JMP target` | Yes | Jump unconditionally. | Preserved |
-| `JZ target` | No | Jump when `ZF` is set. | Preserved |
+| `JZ target` | Yes | Jump when `ZF` is set. | Preserved |
 | `PUSH source` | Yes | Decrement `SP`, then copy the register into memory at `SP`. | Preserved |
 | `POP destination` | No | Copy the top stack byte into a register and remove it from the stack. | Undecided |
 | `CALL target` | No | Push a return address and jump. | Undecided |
@@ -126,7 +126,18 @@ This executes addresses 0, 1, and 3, skipping the write of 99. R0 remains 5, and
 
 `JZ 20`: Jump to index `20` if `ZF = 1`; otherwise continue.
 
-Decided, not yet implemented: Apply the same target validation as `JMP`, even when `ZF = 0`. If `ZF = 1`, set `PC` to the target; otherwise set `PC` to the previous `PC + 1`. Preserve registers, memory, `SP`, `ZF`, and halted status. An untaken final branch reaches `PC = N` and completes without setting `halted`. Both taken and untaken branches will produce explicit execution feedback.
+Apply the same target validation as `JMP`, even when `ZF = 0`. If `ZF = 1`, set `PC` to the target; otherwise set `PC` to the previous `PC + 1`. Preserve registers, memory, `SP`, `ZF`, and halted status. An untaken final branch reaches `PC = N` and completes without setting `halted`. Both taken and untaken branches emit a branch event with the operation, previous PC, target, next PC, and taken status. The interface explains the outcome and marks ZF as read; it does not produce a flag-write cue.
+
+```text
+MOV R0, 3
+MOV R1, 1
+SUB R0, R1
+JZ 5
+JMP 2
+HALT
+```
+
+R0 counts down through 2, 1, and 0. The first two JZ steps fall through to JMP, which returns to SUB. The third jumps to HALT at index 5, stopping with PC = 6 and ZF = 1. JZ can also follow CMP to branch on register equality; CMP requires two register operands, not an immediate value.
 
 ### PUSH
 
