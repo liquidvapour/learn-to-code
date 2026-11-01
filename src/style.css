@@ -67,6 +67,12 @@ meter::-moz-meter-bar { background: var(--mint); }
 .machine-indicators strong { color: #e2e9ee; padding-left: 5px; }
 .machine-indicators > :last-child { margin-left: auto; color: var(--cyan); }
 .machine-indicators > .halted { color: var(--amber); }
+.zero-flag { padding: 4px 6px; border-radius: 3px; }
+.zero-flag.flag-write { box-shadow: inset 0 0 0 1px currentColor; }
+.zero-flag.flag-0 { color: #ffabab; background: #45282c; }
+.zero-flag.flag-1 { color: var(--mint); background: #264435; }
+.zero-flag.flag-write strong { color: inherit; }
+.flag-role { margin-left: 6px; font-size: 9px; }
 .step-explanation { background: #151b20; border-left: 2px solid var(--mint); padding: 8px 10px; color: #cee5d7; font: 11px/1.5 var(--mono); margin: 12px 0 0; }
 .stack-panel { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; }
 .stack-usage { color: var(--muted); font-size: 11px; line-height: 1.6; margin: 0; }

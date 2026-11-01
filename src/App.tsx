@@ -76,6 +76,8 @@ function App() {
     : lastEvent?.kind === 'memory-write' ? [lastEvent.sourceRegister]
       : lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction') ? [lastEvent.sourceRegister] : []
   const writtenRegister = lastEvent?.kind === 'register-write' ? lastEvent.register : null
+  const wroteZeroFlag = lastEvent?.kind === 'comparison'
+    || (lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction'))
   const readAddress = lastEvent?.kind === 'register-write' && lastEvent.source === 'memory' ? lastEvent.address : null
   const writtenAddress = lastEvent?.kind === 'memory-write' ? lastEvent.address : null
   const hasNextInstruction = errors.length === 0 && !machine.halted && machine.pc < program.length
@@ -201,7 +203,13 @@ function App() {
                 </div>
               ))}
             </dl>
-            <div className="machine-indicators"><span>PC <strong>{machine.pc.toString().padStart(2, '0')}</strong></span><span>ZF <strong>{machine.zf ? '1' : '0'}</strong></span><span className={machine.halted ? 'halted' : ''}>{programMode === 'edit' ? '● EDITING' : machine.halted ? '■ HALTED' : hasNextInstruction ? '● READY' : '■ COMPLETE'}</span></div>
+            <div className="machine-indicators">
+              <span>PC <strong>{machine.pc.toString().padStart(2, '0')}</strong></span>
+              <span className={`zero-flag${wroteZeroFlag ? ` flag-write flag-${Number(machine.zf)}` : ''}`}>
+                ZF <strong>{machine.zf ? '1' : '0'}</strong>{wroteZeroFlag && <span className="flag-role">↓ WRITE</span>}
+              </span>
+              <span className={machine.halted ? 'halted' : ''}>{programMode === 'edit' ? '● EDITING' : machine.halted ? '■ HALTED' : hasNextInstruction ? '● READY' : '■ COMPLETE'}</span>
+            </div>
             <p className="step-explanation" aria-live="polite" aria-atomic="true">
               {describeEvent(lastEvent)}
             </p>

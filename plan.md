@@ -57,6 +57,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
+- [x] Highlight ZF writes from ADD, SUB, and CMP: red for 0, green for 1, with a visible write cue; clear on the next step or reset, including writes that preserve the flag value. Tests and production build pass; browser verification remains pending.
+
 - [x] **`SUB`:**
   - [x] Add core register subtraction modulo 256, set `ZF` from the stored result, emit a subtraction register-write event, and test wraparound, state preservation, and invalid registers.
   - [x] Parse `SUB destination, source`, connect subtraction events to interface explanations and read highlights, and update syntax help and instruction references with an executable example.
