@@ -19,7 +19,7 @@ The Implemented column indicates availability through both the machine core and 
 
 ## Complete instruction set
 
-`destination` and `source` mean registers; `value` is an immediate byte; `address` is a memory address. For planned control flow, `target` means an instruction index, whose allowed range is still to be decided.
+`destination` and `source` mean registers; `value` is an immediate byte; `address` is a memory address. For planned control flow, `target` means an instruction index, from `0` through `N - 1` for a program with `N` instructions; it is not limited to one byte.
 
 | Instruction | Implemented | Meaning | ZF effect |
 | --- | --- | --- | --- |
@@ -29,8 +29,8 @@ The Implemented column indicates availability through both the machine core and 
 | `ADD destination, source` | Yes | Add register values into the destination, modulo 256. | Set if stored result is zero; otherwise cleared |
 | `SUB destination, source` | Yes | Subtract source from destination, modulo 256. | Set if stored result is zero; otherwise cleared |
 | `CMP destination, source` | Yes | Compare two registers without changing them. | Set if values are equal; otherwise cleared |
-| `JMP target` | No | Jump unconditionally. | Undecided |
-| `JZ target` | No | Jump when `ZF` is set. | Undecided |
+| `JMP target` | No | Jump unconditionally. | Preserved |
+| `JZ target` | No | Jump when `ZF` is set. | Preserved |
 | `PUSH source` | Yes | Decrement `SP`, then copy the register into memory at `SP`. | Preserved |
 | `POP destination` | No | Copy the top stack byte into a register and remove it from the stack. | Undecided |
 | `CALL target` | No | Push a return address and jump. | Undecided |
@@ -109,13 +109,15 @@ Both operands must be registers. Execution emits a comparison event containing b
 
 `JMP 20`: Set `PC` to instruction index `20`.
 
-Open decisions and remaining work: Define valid targets, program limits, invalid-target faults, and source-line mapping.
+Decided, not yet implemented: Replace `PC` with the target and preserve registers, memory, `SP`, `ZF`, and halted status. Targets must be safe integers identifying an existing instruction (`0`–`N - 1`), excluding blank and comment-only lines. Source uses unsigned decimal integers. Forward, backward, and self-jumps are valid; targets above 255 are valid in sufficiently long programs. Jumping to `N` is invalid.
+
+The parser will validate targets against the complete program and block execution on any error, reporting the branch source line. The core will require program-length context and reject invalid targets before changing state. Debug mode will distinguish instruction addresses from source line numbers. See the [control-flow contract](technical-design.md#control-flow-contract-jmp-and-jz) for validation, completion, and event details.
 
 ### JZ
 
 `JZ 20`: Jump to index `20` if `ZF = 1`; otherwise continue.
 
-Open decisions and remaining work: Define target validation (including an untaken branch), fall-through behaviour, and flag preservation.
+Decided, not yet implemented: Apply the same target validation as `JMP`, even when `ZF = 0`. If `ZF = 1`, set `PC` to the target; otherwise set `PC` to the previous `PC + 1`. Preserve registers, memory, `SP`, `ZF`, and halted status. An untaken final branch reaches `PC = N` and completes without setting `halted`. Both taken and untaken branches will produce explicit execution feedback.
 
 ### PUSH
 

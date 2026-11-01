@@ -89,6 +89,34 @@ The first prototype includes a small text editor for the tiny assembly language.
 
 The first useful editing exercise is to change an immediate value and observe the register, then use `STORE` to see that decimal `65`, hex `41`, binary `0100 0001`, and ASCII `A` are views of one byte. The exact first instruction subset should include the operations needed for these examples and remain small.
 
+## Control-flow contract: JMP and JZ
+
+These decisions define the next implementation steps; neither instruction is supported yet.
+
+- **Instruction addresses:** For a parsed program containing `N` instructions, targets are zero-based indices from `0` through `N - 1`. Blank and comment-only lines do not consume indices. Targets identify instructions, not source lines or data-memory bytes. Source operands are unsigned decimal integers; labels, signs, fractions, and hex literals are not supported.
+- **Program size:** Instruction addresses and `PC` are not 8-bit values. Do not impose the data-memory limit of 256 on programs or branch targets. A target must be a safe integer and refer to an instruction in the current program. Return-address storage remains a separate decision for `CALL` and `RET`.
+- **JMP:** Replace `PC` with the target, without adding one. Forward, backward, and self-jumps are valid. A self-jump consumes one Step and leaves the same instruction selected.
+- **JZ:** Validate the target first, regardless of `ZF`. If `ZF` is `1`, replace `PC` with the target; otherwise advance `PC` by one. Read the flag without clearing or rewriting it.
+- **Preserved state:** Both instructions preserve all registers, memory, `SP`, `ZF`, and the halted flag. The existing rule rejecting execution while halted still applies.
+- **Program end:** `PC = N` means normal completion after fall-through, including an untaken final `JZ`. It disables further stepping without setting `halted`. `HALT` retains its current behaviour: advance `PC` and set `halted`. A jump to `N` is invalid because there is no instruction there; use `HALT` for an explicit stop. An empty program has no valid targets and cannot be stepped.
+- **Validation:** After parsing all instructions, validate every branch against the final instruction count, including forward references and unreachable or untaken branches. Report errors at the branch's original source line and block the whole program. The core must also receive the program length and reject invalid targets with an instruction-specific `RangeError` before producing a result, leaving the input state untouched. Missing or invalid program-length context must reject branch execution. A full fault-state interface is deferred.
+- **Feedback:** Display decimal instruction addresses alongside the existing source line numbers in Debug mode. A branch event records the operation, previous PC, target, next PC, and whether the branch was taken, so the interface can explain both taken and untaken branches. `JZ` feedback identifies the flag read; neither branch produces a flag-write cue. The next-instruction marker follows the resulting PC even for self-jumps.
+
+For example, this source has four instructions even though it contains six source lines:
+
+```text
+; Instruction addresses ignore comments and blank lines
+MOV R0, 2
+MOV R1, 1
+
+SUB R0, R1
+JZ 2
+```
+
+Source line 5 has instruction address `2`, and source line 6 has address `3`. With `ZF = 0`, `JZ 2` falls through to `PC = 4` and completes. Changing the initial R0 value to `1` makes `ZF = 1`, so it jumps to instruction `2` without changing the flag. `JZ 4` would be rejected before execution regardless of the flag value.
+
+Implementation checks should cover first/last targets, forward/backward/self-jumps, targets above 255 in longer programs, invalid numeric targets and missing context, both `JZ` outcomes, untaken invalid targets, last-instruction fall-through, state preservation, source-line mapping, and whole-program rejection.
+
 ## Memory as a hex explorer
 
 Memory is a first-class, inspectable part of the interface.
@@ -186,7 +214,7 @@ A small follow-up example using `STORE` can demonstrate decimal `65` becoming he
 
 - **Arithmetic:** confirm overflow behaviour for 8-bit results and which operations update `ZF`.
 - **Stack:** define its memory region, initial `SP`, whether `SP` points at the top item or the next free byte, and underflow/overflow behaviour.
-- **Program addressing:** define instruction indexing, jump targets, program limits, and return-address representation.
+- **Return addressing:** `JMP`/`JZ` indexing and target bounds are defined above; decide return-address width and encoding before `CALL` and `RET`.
 - **Memory map:** decide which regions are initially available for ordinary data and the stack; reserve heap and device behaviour for a later milestone.
 - **Faults:** define how invalid instructions, addresses, and illegal stack operations stop execution and explain the problem.
 

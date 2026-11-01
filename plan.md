@@ -72,8 +72,12 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
     - Highlight both compared registers as read and retain the comparison explanation; browser verification remains pending.
     - Update editor help, README, and both instruction references; run tests and production build.
 - [ ] **`JMP` and `JZ`:** introduce instruction addresses and conditional control flow.
-  - [ ] Define zero-based target bounds, program-end behaviour, invalid-target handling (including untaken branches), and flag preservation before implementing control flow.
+  - [x] Define zero-based target bounds, program-end behaviour, invalid-target handling (including untaken branches), and flag preservation before implementing control flow. Recorded in the technical design and development instruction reference; runtime support is still pending.
   - [ ] Add core `JMP` execution and tests for target validation, PC replacement, and state preservation.
+    - Add a typed target operand and program-length context for branch execution; keep existing non-branch callers working.
+    - Validate safe-integer targets against `0`–`N - 1`, rejecting missing/invalid context before changing state.
+    - Emit a branch event with operation, previous PC, target, next PC, and taken status; add the minimal app event explanation needed to keep the build working.
+    - Test first/last, forward/backward/self targets, addresses above 255, invalid targets/context, halted execution, and preservation of registers, memory, SP, and ZF; run tests and the production build.
   - [ ] Add `JMP` parsing, interface feedback, and instruction documentation.
   - [ ] Add conditional `JZ` execution, parsing, interface feedback, and documentation with taken/untaken branch tests.
 - [ ] **`POP`:** remove the top byte from the downward-growing stack into a register. Define empty-stack behaviour.
@@ -92,6 +96,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - Design a memory-mapped display and revisit the memory budget before attempting Conway's Game of Life.
 
 ## Decisions so far
+
+The planned `JMP`/`JZ` contract uses existing instruction indices `0`–`N - 1`, independent of the 256-byte data memory. Both preserve `ZF` and other data state. All targets are validated before execution, including untaken branches. Falling through to `PC = N` completes without setting `halted`; jumping to `N` is invalid. Core branches require program-length context, and Debug will show instruction addresses separately from source lines. See the [control-flow contract](technical-design.md#control-flow-contract-jmp-and-jz). This design step adds no runtime support.
 
 The workspace uses an instrument-rack layout on desktop (1100px and wider, with at least 600px height), with internal overflow for long content. Smaller viewports reflow to preserve readable controls. Cyan means next instruction, amber means last read, mint means last write, and violet marks stack occupancy. Event highlights persist until the next step or reset; register write pulses respect reduced-motion preferences. Build and existing tests pass; browser layout verification remains pending.
 
