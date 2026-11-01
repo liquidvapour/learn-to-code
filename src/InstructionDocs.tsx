@@ -13,7 +13,7 @@ export default function InstructionDocs() {
         <p>The machine starts with four zeroed registers, 256 zeroed memory bytes, PC = 0, SP = 256, and ZF = 0.</p>
         <dl>
           <dt>PC — program counter</dt>
-          <dd>The zero-based index of the next instruction, excluding blank and comment-only lines. Every supported instruction advances PC by one, including HALT. Source line numbers are shown separately.</dd>
+          <dd>The zero-based index of the next instruction, excluding blank and comment-only lines. JMP replaces PC with its target; other supported instructions advance PC by one, including HALT. Debug shows source lines labelled Line and instruction addresses labelled PC.</dd>
           <dt>SP — stack pointer</dt>
           <dd>The address of the top stack byte. An empty stack has SP = 256, just beyond memory. PUSH grows the stack toward lower addresses.</dd>
           <dt>ZF — zero flag</dt>
@@ -53,6 +53,14 @@ export default function InstructionDocs() {
           <p>The comparisons set ZF to 1, then 0, then 1 for self-comparison. R0 stays 5 and R1 ends at 7. Both compared registers are highlighted as reads, and the explanation shows their values and equality result.</p>
         </section>
         <section>
+          <h3>JMP — jump to an instruction</h3>
+          <p><code>JMP target</code></p>
+          <p>Set PC to the target instruction address. Use an unsigned decimal integer from 0 through the last instruction index. Blank and comment-only lines do not count. Targets may exceed 255 in longer programs; labels and hexadecimal literals are not supported.</p>
+          <pre><code>{'MOV R0, 5\nJMP 3\nMOV R0, 99\nHALT'}</code></pre>
+          <p>JMP skips the write of 99 and selects HALT at address 3, leaving R0 = 5. Registers, memory, SP, and ZF stay unchanged. The explanation shows the old and new PC, and Next marks the target.</p>
+          <p>Backward and self-jumps are valid. <code>JMP 0</code> alone repeats the same instruction on each Step. Every target must exist, even in unreachable code; invalid targets block the whole program. Jumping just past the last instruction is invalid. Use HALT to stop explicitly.</p>
+        </section>
+        <section>
           <h3>STORE — write a register to memory</h3>
           <p><code>STORE register, address</code></p>
           <p>Copy the register byte into the specified decimal memory address, replacing the previous byte. Registers, SP, and ZF stay unchanged. Every address from 0 to 255 is writable, including occupied stack bytes.</p>
@@ -76,7 +84,7 @@ export default function InstructionDocs() {
         <section>
           <h3>HALT — stop execution</h3>
           <p><code>HALT</code></p>
-          <p>Takes no operands. Advance PC and mark the machine halted. Registers, memory, SP, and ZF stay unchanged. Step is disabled until the machine is reset. If a program reaches its final instruction without HALT, the interface instead reports Program complete.</p>
+          <p>Takes no operands. Advance PC and mark the machine halted. Registers, memory, SP, and ZF stay unchanged. Step is disabled until the machine is reset. If a program advances past its final instruction without HALT, the interface instead reports Program complete.</p>
         </section>
       </section>
 

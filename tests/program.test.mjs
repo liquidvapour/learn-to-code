@@ -94,10 +94,10 @@ test('LOAD rejects invalid operands with precise source errors and blocks the wh
   }
 })
 
-test('unsupported-instruction help includes CMP, SUB, and LOAD', () => {
+test('unsupported-instruction help includes JMP, CMP, SUB, and LOAD', () => {
   assert.deepEqual(parseProgram('UNKNOWN').errors, [{
     lineNumber: 1,
-    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, STORE, LOAD, PUSH, or HALT.',
+    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, JMP, STORE, LOAD, PUSH, or HALT.',
   }])
 })
 
@@ -236,5 +236,60 @@ test('documented CMP example compares equal, unequal, and identical registers', 
   ])
   assert.equal(state.zf, true)
   assert.equal(state.pc, 7)
+  assert.equal(state.halted, true)
+})
+
+test('JMP supports forward, backward, and self targets with source-line mapping', () => {
+  const { program, errors } = parseProgram('; Heading\r\n jmp 002 ; Forward\r\n\r\nJMP 0\n; Comment\nJMP 2')
+  assert.deepEqual(errors, [])
+  assert.deepEqual(program.map(({ instruction }) => instruction), [
+    { operation: 'JMP', target: 2 }, { operation: 'JMP', target: 0 }, { operation: 'JMP', target: 2 },
+  ])
+  assert.deepEqual(program.map(({ lineNumber }) => lineNumber), [2, 4, 6])
+  assert.equal(program[0].source, 'jmp 002 ; Forward')
+  assert.deepEqual(parseProgram('JMP 0').errors, [])
+})
+
+test('JMP rejects malformed and unsafe targets with source errors', () => {
+  for (const target of ['', '-1', '+1', '1.5', '0x1', '1e0', 'NaN', 'Infinity', 'R0', 'label', '0, 1', '0 1', '9007199254740992']) {
+    assert.deepEqual(parseProgram(`; Header\nJMP ${target}\nHALT`), {
+      program: [], errors: [{ lineNumber: 2, message: 'JMP target must be an unsigned decimal safe integer.' }],
+    }, target)
+  }
+})
+
+test('JMP validates every target against the final instruction count, including unreachable branches', () => {
+  assert.deepEqual(parseProgram('HALT\n; Comment\nJMP 3\n\nJMP 9007199254740991'), {
+    program: [], errors: [
+      { lineNumber: 3, message: 'JMP target must identify an instruction from 0 to 2.' },
+      { lineNumber: 5, message: 'JMP target must identify an instruction from 0 to 2.' },
+    ],
+  })
+  assert.deepEqual(parseProgram('JMP 1'), {
+    program: [], errors: [{ lineNumber: 1, message: 'JMP target must identify an instruction from 0 to 0.' }],
+  })
+  // Syntax errors block execution before target bounds use an incomplete instruction list.
+  assert.deepEqual(parseProgram('JMP 2\nINVALID\nHALT').errors.map(({ lineNumber }) => lineNumber), [2])
+})
+
+test('JMP accepts instruction addresses above 255 in longer programs', () => {
+  const { program, errors } = parseProgram(['JMP 256', ...Array(256).fill('HALT')].join('\n'))
+  assert.deepEqual(errors, [])
+  const result = executeInstruction(createInitialState(), program[0].instruction, program.length)
+  assert.equal(result.state.pc, 256)
+})
+
+test('documented JMP example skips a write and halts at its target', () => {
+  const { program, errors } = parseProgram('MOV R0, 5\nJMP 3\nMOV R0, 99\nHALT')
+  assert.deepEqual(errors, [])
+  let state = createInitialState()
+  const visited = []
+  for (let step = 0; step < 3; step++) {
+    visited.push(state.pc)
+    state = executeInstruction(state, program[state.pc].instruction, program.length).state
+  }
+  assert.deepEqual(visited, [0, 1, 3])
+  assert.equal(state.registers.R0, 5)
+  assert.equal(state.pc, 4)
   assert.equal(state.halted, true)
 })

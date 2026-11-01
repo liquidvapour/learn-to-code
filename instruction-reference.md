@@ -15,11 +15,11 @@ The Implemented column indicates availability through both the machine core and 
 - Values and memory addresses in source use decimal integers from `0` to `255`. Hex literals and labels are not supported.
 - A semicolon (`;`) starts a comment extending to the end of the line, with or without preceding whitespace. Comments may follow instructions or occupy a whole line. Comment-only lines do not produce instructions or advance `PC`. Original source text and line numbers are preserved for display and errors.
 - The whole program must parse successfully before execution. Unsupported instructions are rejected, including the planned instructions below.
-- Every supported instruction advances `PC` by one, including `HALT`. Reaching the end without `HALT` is reported as program completion by the interface.
+- `JMP` replaces `PC` with its target; other supported instructions advance `PC` by one, including `HALT`. Reaching the end without `HALT` is reported as program completion by the interface.
 
 ## Complete instruction set
 
-`destination` and `source` mean registers; `value` is an immediate byte; `address` is a memory address. For planned control flow, `target` means an instruction index, from `0` through `N - 1` for a program with `N` instructions; it is not limited to one byte.
+`destination` and `source` mean registers; `value` is an immediate byte; `address` is a memory address. For control flow, `target` means an instruction index, from `0` through `N - 1` for a program with `N` instructions; it is not limited to one byte.
 
 | Instruction | Implemented | Meaning | ZF effect |
 | --- | --- | --- | --- |
@@ -29,7 +29,7 @@ The Implemented column indicates availability through both the machine core and 
 | `ADD destination, source` | Yes | Add register values into the destination, modulo 256. | Set if stored result is zero; otherwise cleared |
 | `SUB destination, source` | Yes | Subtract source from destination, modulo 256. | Set if stored result is zero; otherwise cleared |
 | `CMP destination, source` | Yes | Compare two registers without changing them. | Set if values are equal; otherwise cleared |
-| `JMP target` | No | Jump unconditionally. | Preserved |
+| `JMP target` | Yes | Jump unconditionally. | Preserved |
 | `JZ target` | No | Jump when `ZF` is set. | Preserved |
 | `PUSH source` | Yes | Decrement `SP`, then copy the register into memory at `SP`. | Preserved |
 | `POP destination` | No | Copy the top stack byte into a register and remove it from the stack. | Undecided |
@@ -109,9 +109,18 @@ Both operands must be registers. Execution emits a comparison event containing b
 
 `JMP 20`: Set `PC` to instruction index `20`.
 
-Implemented in the core only; source parsing is still pending. Replace `PC` with the target and preserve registers, memory, `SP`, `ZF`, and halted status. Targets must be safe integers identifying an existing instruction (`0`–`N - 1`), excluding blank and comment-only lines. Source uses unsigned decimal integers. Forward, backward, and self-jumps are valid; targets above 255 are valid in sufficiently long programs. Jumping to `N` is invalid.
+Replace `PC` with the target and preserve registers, memory, `SP`, `ZF`, and halted status. Targets must be safe integers identifying an existing instruction (`0`–`N - 1`), excluding blank and comment-only lines. Source uses unsigned decimal integers. Forward, backward, and self-jumps are valid; targets above 255 are valid in sufficiently long programs. Jumping to `N` is invalid.
 
-The parser will validate targets against the complete program and block execution on any error, reporting the branch source line. The core requires a non-negative safe integer program length as the third argument to `executeInstruction` and rejects missing/invalid context or invalid targets with a `RangeError` before changing state. It emits a branch event containing the operation, previous PC, target, next PC, and taken status. Debug mode will distinguish instruction addresses from source line numbers. See the [control-flow contract](technical-design.md#control-flow-contract-jmp-and-jz) for validation, completion, and event details.
+After syntax validation succeeds, the parser validates targets against the complete program and blocks execution on any error, reporting the branch source line. Unreachable branches are validated too. The core requires a non-negative safe integer program length as the third argument to `executeInstruction` and rejects missing/invalid context or invalid targets with a `RangeError` before changing state. It emits a branch event containing the operation, previous PC, target, next PC, and taken status. Debug mode displays decimal instruction addresses labelled PC alongside source line numbers labelled Line; the Next marker follows the target and the explanation shows the previous and next PC. See the [control-flow contract](technical-design.md#control-flow-contract-jmp-and-jz) for validation, completion, and event details.
+
+```text
+MOV R0, 5
+JMP 3
+MOV R0, 99
+HALT
+```
+
+This executes addresses 0, 1, and 3, skipping the write of 99. R0 remains 5, and HALT stops with PC = 4. `JMP 0` alone is a valid self-loop that consumes one Step each time.
 
 ### JZ
 

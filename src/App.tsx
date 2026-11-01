@@ -64,7 +64,8 @@ function App() {
   const [source, setSource] = useState(SAMPLE_SOURCE)
   const [programMode, setProgramMode] = useState<'edit' | 'debug'>('edit')
   const { program, errors } = parseProgram(source)
-  const lineNumberWidth = `${String(program.at(-1)?.lineNumber ?? 1).length}ch`
+  const addressWidth = `${String(Math.max(0, program.length - 1)).length + 3}ch`
+  const lineNumberWidth = `${String(program.at(-1)?.lineNumber ?? 1).length + 5}ch`
   const [execution, setExecution] = useState<ExecutionView>(() => ({
     machine: createInitialState(),
     lastEvent: null,
@@ -92,7 +93,7 @@ function App() {
       const next = program[previous.machine.pc]
       if (!next) return previous
 
-      const result = executeInstruction(previous.machine, next.instruction)
+      const result = executeInstruction(previous.machine, next.instruction, program.length)
       return { machine: result.state, lastEvent: result.events[0] ?? null }
     })
   }
@@ -146,8 +147,8 @@ function App() {
                 aria-invalid={errors.length > 0}
               />
               <p className="syntax-help" id="syntax-help">
-                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
-                {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
+                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>JMP 0</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
+                {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. JMP targets: decimal instruction indices starting at 0. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
                 {' '}<a href="#instructions">Full instruction reference</a>.
               </p>
               <div id="program-errors" className="program-errors" aria-live="polite">
@@ -165,7 +166,7 @@ function App() {
             </>
           ) : (
             <>
-              <ol className="program-list" aria-label="Parsed instructions with source line numbers">
+              <ol className="program-list" aria-label="Parsed instructions with source lines and instruction addresses">
                 {program.map((line, index) => (
                   <li
                     key={index}
@@ -173,7 +174,8 @@ function App() {
                     className={hasNextInstruction && index === machine.pc ? 'program-line active' : 'program-line'}
                     aria-current={hasNextInstruction && index === machine.pc ? 'step' : undefined}
                   >
-                    <span className="line-number" style={{ width: lineNumberWidth }}>{line.lineNumber}</span>
+                    <span className="line-number" style={{ width: lineNumberWidth }}>Line {line.lineNumber}</span>
+                    <span className="instruction-address" style={{ width: addressWidth }}>PC {index}</span>
                     <code>{line.source}</code>
                     {hasNextInstruction && index === machine.pc && <span className="next-marker">Next</span>}
                   </li>

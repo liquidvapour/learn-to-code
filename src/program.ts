@@ -5,6 +5,7 @@ import {
   type ADDInstruction,
   type SUBInstruction,
   type CMPInstruction,
+  type JMPInstruction,
   type STOREInstruction,
   type LOADInstruction,
   type PUSHInstruction,
@@ -59,6 +60,13 @@ function compare(operands: string): CMPInstruction {
   return { operation: 'CMP', register: register(destination), source: register(source) }
 }
 
+function jump(operands: string): JMPInstruction {
+  if (!/^\d+$/.test(operands) || !Number.isSafeInteger(Number(operands))) {
+    throw new Error('JMP target must be an unsigned decimal safe integer.')
+  }
+  return { operation: 'JMP', target: Number(operands) }
+}
+
 function store(operands: string): STOREInstruction {
   const [destination, address] = operandPair('STORE', operands, 'address')
   return { operation: 'STORE', register: register(destination), address: byte(address, 'STORE address') }
@@ -95,6 +103,8 @@ function parseInstruction(text: string): Instruction {
       return subtract(operands)
     case 'CMP':
       return compare(operands)
+    case 'JMP':
+      return jump(operands)
     case 'STORE':
       return store(operands)
     case 'LOAD':
@@ -104,7 +114,7 @@ function parseInstruction(text: string): Instruction {
     case 'HALT':
       return halt(operands)
     default:
-      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, CMP, STORE, LOAD, PUSH, or HALT.`)
+      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, CMP, JMP, STORE, LOAD, PUSH, or HALT.`)
   }
 }
 
@@ -122,5 +132,13 @@ export function parseProgram(source: string): { program: ProgramLine[]; errors: 
       errors.push({ lineNumber, message: (error as Error).message })
     }
   })
+  // Bounds need the complete instruction list; syntax errors must be fixed first.
+  if (errors.length === 0) {
+    for (const { instruction, lineNumber } of program) {
+      if (instruction.operation === 'JMP' && instruction.target >= program.length) {
+        errors.push({ lineNumber, message: `JMP target must identify an instruction from 0 to ${program.length - 1}.` })
+      }
+    }
+  }
   return { program: errors.length ? [] : program, errors }
 }

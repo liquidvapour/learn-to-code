@@ -42,6 +42,7 @@ h1 { margin: 5px 0; font-size: 28px; letter-spacing: -.05em; font-weight: 750; }
 .program-line { display: flex; align-items: center; gap: 12px; min-height: 38px; padding: 8px 10px; border-left: 3px solid transparent; font: 12px var(--mono); }
 .program-line code { overflow-wrap: anywhere; }
 .program-line.active { background: #213b47; border-left-color: var(--cyan); color: #d3f3ff; }
+.instruction-address { flex-shrink: 0; text-align: right; color: var(--cyan); font-size: 10px; }
 .line-number { flex-shrink: 0; text-align: right; color: #95a1ac; font-size: 10px; }
 .next-marker { margin-left: auto; color: var(--cyan); font: 9px var(--mono); text-transform: uppercase; }
 .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }

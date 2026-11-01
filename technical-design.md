@@ -91,7 +91,7 @@ The first useful editing exercise is to change an immediate value and observe th
 
 ## Control-flow contract: JMP and JZ
 
-These decisions define the next implementation steps; neither instruction is supported yet.
+This contract guides control-flow implementation. `JMP` is supported; `JZ` remains planned.
 
 - **Instruction addresses:** For a parsed program containing `N` instructions, targets are zero-based indices from `0` through `N - 1`. Blank and comment-only lines do not consume indices. Targets identify instructions, not source lines or data-memory bytes. Source operands are unsigned decimal integers; labels, signs, fractions, and hex literals are not supported.
 - **Program size:** Instruction addresses and `PC` are not 8-bit values. Do not impose the data-memory limit of 256 on programs or branch targets. A target must be a safe integer and refer to an instruction in the current program. Return-address storage remains a separate decision for `CALL` and `RET`.
