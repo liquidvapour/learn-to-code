@@ -109,9 +109,9 @@ Both operands must be registers. Execution emits a comparison event containing b
 
 `JMP 20`: Set `PC` to instruction index `20`.
 
-Decided, not yet implemented: Replace `PC` with the target and preserve registers, memory, `SP`, `ZF`, and halted status. Targets must be safe integers identifying an existing instruction (`0`–`N - 1`), excluding blank and comment-only lines. Source uses unsigned decimal integers. Forward, backward, and self-jumps are valid; targets above 255 are valid in sufficiently long programs. Jumping to `N` is invalid.
+Implemented in the core only; source parsing is still pending. Replace `PC` with the target and preserve registers, memory, `SP`, `ZF`, and halted status. Targets must be safe integers identifying an existing instruction (`0`–`N - 1`), excluding blank and comment-only lines. Source uses unsigned decimal integers. Forward, backward, and self-jumps are valid; targets above 255 are valid in sufficiently long programs. Jumping to `N` is invalid.
 
-The parser will validate targets against the complete program and block execution on any error, reporting the branch source line. The core will require program-length context and reject invalid targets before changing state. Debug mode will distinguish instruction addresses from source line numbers. See the [control-flow contract](technical-design.md#control-flow-contract-jmp-and-jz) for validation, completion, and event details.
+The parser will validate targets against the complete program and block execution on any error, reporting the branch source line. The core requires a non-negative safe integer program length as the third argument to `executeInstruction` and rejects missing/invalid context or invalid targets with a `RangeError` before changing state. It emits a branch event containing the operation, previous PC, target, next PC, and taken status. Debug mode will distinguish instruction addresses from source line numbers. See the [control-flow contract](technical-design.md#control-flow-contract-jmp-and-jz) for validation, completion, and event details.
 
 ### JZ
 

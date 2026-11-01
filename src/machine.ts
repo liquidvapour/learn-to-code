@@ -8,6 +8,7 @@ const InstrictionMOV = 'MOV'
 const InstrictionADD = 'ADD'
 const InstrictionSUB = 'SUB'
 const InstrictionCMP = 'CMP'
+const InstrictionJMP = 'JMP'
 const InstrictionSTORE = 'STORE'
 const InstrictionLOAD = 'LOAD'
 const InstrictionPUSH = 'PUSH'
@@ -35,6 +36,11 @@ export type CMPInstruction = Readonly<{
   operation: 'CMP'
   register: Register
   source: Register
+}>
+
+export type JMPInstruction = Readonly<{
+  operation: 'JMP'
+  target: number
 }>
 
 export type STOREInstruction = Readonly<{
@@ -66,6 +72,7 @@ export type Instruction =
   | ADDInstruction
   | SUBInstruction
   | CMPInstruction
+  | JMPInstruction
   | STOREInstruction
   | LOADInstruction 
   | PUSHInstruction 
@@ -108,6 +115,13 @@ export type MachineEvent = Readonly<({
   value: number
   sourceValue: number
   equal: boolean
+}> | Readonly<{
+  kind: 'branch'
+  operation: 'JMP'
+  previousPc: number
+  target: number
+  nextPc: number
+  taken: boolean
 }> | Readonly<{
   kind: 'halt'
 }>
@@ -265,11 +279,31 @@ function push(state: MachineState, instruction: PUSHInstruction) {
   })
 }
 
+function jump(state: MachineState, instruction: JMPInstruction, programLength?: number): StepResult {
+  if (programLength === undefined || !Number.isSafeInteger(programLength) || programLength < 0) {
+    throw new RangeError('JMP requires a non-negative safe integer program length')
+  }
+  const { target } = instruction
+  if (!Number.isSafeInteger(target) || target < 0 || target >= programLength) {
+    throw new RangeError('JMP target must be a safe integer identifying an instruction in the program')
+  }
+
+  return {
+    state: { ...state, pc: target },
+    events: [{ kind: 'branch', operation: 'JMP', previousPc: state.pc, target, nextPc: target, taken: true }],
+  }
+}
+
 function halt(state: MachineState) {
   return completeStep(state, { halted: true }, { kind: 'halt' })
 }
 
-export function executeInstruction(state: MachineState, instruction: Instruction): StepResult {
+// Program length is required for branches; non-branch instructions remain context-free.
+export function executeInstruction(
+  state: MachineState,
+  instruction: Instruction,
+  programLength?: number,
+): StepResult {
   if (state.halted) {
     throw new Error('Machine is halted; reset before stepping again')
   }
@@ -283,6 +317,8 @@ export function executeInstruction(state: MachineState, instruction: Instruction
       return subtract(state, instruction)
     case InstrictionCMP:
       return compare(state, instruction)
+    case InstrictionJMP:
+      return jump(state, instruction, programLength)
     case InstrictionSTORE:
       return store(state, instruction)
     case InstrictionLOAD:

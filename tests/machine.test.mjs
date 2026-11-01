@@ -392,3 +392,91 @@ test('CMP rejects invalid registers and halted execution without changing state'
   )
   assert.deepEqual(halted, { ...before, halted: true })
 })
+
+test('JMP replaces PC for forward, backward, self, and endpoint targets while preserving data', () => {
+  for (const zf of [false, true]) {
+    for (const target of [0, 2, 4, 299]) {
+      const state = {
+        ...createInitialState(),
+        registers: { R0: 12, R1: 7, R2: 65, R3: 255 },
+        pc: 2,
+        sp: 250,
+        zf,
+      }
+      state.memory[250] = 65
+      const before = structuredClone(state)
+      const instruction = { operation: 'JMP', target }
+      const result = executeInstruction(state, instruction, 300)
+
+      assert.deepEqual(result, executeInstruction(state, instruction, 300))
+      assert.deepEqual(result.state, { ...before, pc: target })
+      assert.notEqual(result.state, state)
+      assert.equal(result.state.registers, state.registers)
+      assert.equal(result.state.memory, state.memory)
+      assert.deepEqual(state, before)
+      assert.deepEqual(result.events, [{
+        kind: 'branch', operation: 'JMP', previousPc: 2, target, nextPc: target, taken: true,
+      }])
+    }
+  }
+})
+
+test('JMP rejects invalid targets, including program end and empty programs, without changing state', () => {
+  const state = { ...createInitialState(), zf: true }
+  state.memory[0] = 65
+  const before = structuredClone(state)
+  for (const target of [-1, 4, 5, 1.5, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1, '0', null, undefined]) {
+    assert.throws(
+      () => executeInstruction(state, { operation: 'JMP', target }, 4),
+      { name: 'RangeError', message: 'JMP target must be a safe integer identifying an instruction in the program' },
+    )
+    assert.deepEqual(state, before)
+  }
+  assert.throws(
+    () => executeInstruction(state, { operation: 'JMP', target: 0 }, 0),
+    /JMP target/,
+  )
+  assert.deepEqual(state, before)
+})
+
+test('JMP requires valid program-length context without changing state', () => {
+  const state = createInitialState()
+  const before = structuredClone(state)
+  for (const programLength of [undefined, null, '4', -1, 1.5, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(
+      () => executeInstruction(state, { operation: 'JMP', target: 0 }, programLength),
+      { name: 'RangeError', message: 'JMP requires a non-negative safe integer program length' },
+    )
+    assert.deepEqual(state, before)
+  }
+})
+
+test('JMP can repeatedly step a one-instruction self-loop but cannot execute while halted', () => {
+  const initial = createInitialState()
+  const instruction = { operation: 'JMP', target: 0 }
+  const first = executeInstruction(initial, instruction, 1)
+  const second = executeInstruction(first.state, instruction, 1)
+  assert.deepEqual(second, first)
+  assert.equal(second.state.halted, false)
+
+  const halted = { ...initial, halted: true }
+  assert.throws(() => executeInstruction(halted, instruction, 1), /Machine is halted/)
+  assert.deepEqual(halted, { ...initial, halted: true })
+})
+
+test('following PC after JMP skips an instruction and reaches HALT', () => {
+  const program = [
+    { operation: 'JMP', target: 2 },
+    { operation: 'MOV', register: 'R0', value: 99 },
+    { operation: 'MOV', register: 'R1', value: 65 },
+    { operation: 'HALT' },
+  ]
+  let state = createInitialState()
+  for (let step = 0; step < 3; step++) {
+    state = executeInstruction(state, program[state.pc], program.length).state
+  }
+  assert.equal(state.registers.R0, 0)
+  assert.equal(state.registers.R1, 65)
+  assert.equal(state.pc, program.length)
+  assert.equal(state.halted, true)
+})
