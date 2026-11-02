@@ -67,6 +67,11 @@ function App() {
   const [source, setSource] = useState(SAMPLE_SOURCE)
   const [programMode, setProgramMode] = useState<'edit' | 'debug'>('edit')
   const { program, errors } = parseProgram(source)
+  const editorGutter = useRef<HTMLPreElement>(null)
+  let editorPc = 0
+  const editorAddresses = source.split(/\r?\n/).map((line) => (
+    line.split(';', 1)[0].trim() ? String(editorPc++) : ''
+  ))
   const addressWidth = `${String(Math.max(0, program.length - 1)).length + 3}ch`
   const lineNumberWidth = `${String(program.at(-1)?.lineNumber ?? 1).length + 5}ch`
   const [execution, setExecution] = useState<ExecutionView>(() => ({
@@ -135,21 +140,30 @@ function App() {
           <div className="module-heading"><h2 id="program-title"><span>01</span> Program</h2><span className="module-label">{programMode === 'edit' ? 'SOURCE / EDIT' : 'SEQUENCER / DEBUG'}</span></div>
           {programMode === 'edit' ? (
             <>
-              <p className="panel-note" id="editor-help">One instruction per line. Debug prepares your program for stepping.</p>
-              <label className="editor-label" htmlFor="program-source">Program source</label>
-              <textarea
-                autoFocus
-                id="program-source"
-                className="program-editor"
-                value={source}
-                onChange={(event) => editSource(event.target.value)}
-                rows={8}
-                spellCheck={false}
-                autoCapitalize="off"
-                autoCorrect="off"
-                aria-describedby="editor-help syntax-help program-errors"
-                aria-invalid={errors.length > 0}
-              />
+              <p className="panel-note" id="editor-help">The PC gutter shows jump targets; blank and comment-only lines have no address. Addresses are provisional until syntax errors are fixed. Debug prepares your program for stepping.</p>
+              <label className="editor-label" htmlFor="program-source">Program source · PC jump targets</label>
+              <div className="source-editor" data-invalid={errors.length > 0}>
+                <div className="editor-gutter" aria-hidden="true" style={{ width: `${Math.max(2, String(Math.max(0, editorPc - 1)).length) + 2}ch` }}>
+                  <pre ref={editorGutter}>{editorAddresses.map((address) => address || ' ').join('\n')}</pre>
+                </div>
+                <textarea
+                  autoFocus
+                  id="program-source"
+                  className="program-editor"
+                  value={source}
+                  onChange={(event) => editSource(event.target.value)}
+                  onScroll={(event) => {
+                    if (editorGutter.current) editorGutter.current.style.transform = `translateY(-${event.currentTarget.scrollTop}px)`
+                  }}
+                  wrap="off"
+                  rows={8}
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  aria-describedby="editor-help syntax-help program-errors"
+                  aria-invalid={errors.length > 0}
+                />
+              </div>
               <p className="syntax-help" id="syntax-help">
                 Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>JMP 0</code> · <code>JZ 0</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>HALT</code>.
                 {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. JMP/JZ targets: decimal instruction indices starting at 0. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.

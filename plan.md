@@ -57,6 +57,10 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Next small steps
 
+- [x] Add a live PC gutter to the source editor for choosing jump targets. Tests and production build pass; browser verification remains pending (no browser tool available).
+  - Number instruction-bearing lines from zero, leaving blank/comment-only lines empty; keep provisional addresses visible while fixing syntax errors.
+  - Keep numbers aligned during scrolling and long-line editing, explain the gutter, and verify tests/build before staging.
+
 - [x] Highlight ZF writes from ADD, SUB, and CMP: red for 0, green for 1, with a visible write cue; clear on the next step or reset, including writes that preserve the flag value. Tests and production build pass; browser verification remains pending.
 
 - [x] **`SUB`:**
