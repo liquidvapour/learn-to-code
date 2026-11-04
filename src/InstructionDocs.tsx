@@ -90,6 +90,13 @@ export default function InstructionDocs() {
           <p>Starting with an empty stack, SP becomes 255 (0xFF) and memory at that address becomes 12 (hex 0C). The next push writes at 254 (0xFE). Stack writes can overwrite bytes previously written by STORE.</p>
         </section>
         <section>
+          <h3>POP — remove the top stack byte</h3>
+          <p><code>POP register</code></p>
+          <p>Copy the byte at SP into the register, then increase SP by one. The byte remains in memory, but is no longer on the stack. Other registers, memory, and ZF stay unchanged. A pop from an empty stack is rejected as a stack underflow.</p>
+          <pre><code>{'MOV R0, 12\nPUSH R0\nPOP R1'}</code></pre>
+          <p>R1 becomes 12 and SP returns to 256. The source memory cell is highlighted as a read and R1 as a write.</p>
+        </section>
+        <section>
           <h3>HALT — stop execution</h3>
           <p><code>HALT</code></p>
           <p>Takes no operands. Advance PC and mark the machine halted. Registers, memory, SP, and ZF stay unchanged. Step is disabled until the machine is reset. If a program advances past its final instruction without HALT, the interface instead reports Program complete.</p>

@@ -6,6 +6,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Done
 
+- [x] Add a runnable SOS beacon example that exercises every implemented instruction.
+
 - [x] Capture the teaching goal, tiny instruction set, and prototype scope (`31f4f44`).
 - [x] Record the technical design, including the hex memory explorer and editable text program (`31f4f44`).
 - [x] Set the small-change and commit-as-you-go rule (`933e682`).
@@ -90,13 +92,13 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
     - Share branch target validation; validate before reading ZF, replace PC when set, otherwise advance by one, preserving all data state.
     - Parse and validate all JZ targets, including untaken branches; show taken/untaken explanations and a flag-read cue.
     - Test both flag values, invalid targets/context, final-instruction fall-through, source mapping, and a runnable conditional example; update references and run tests/build.
-- [ ] **`POP`:** remove the top byte from the downward-growing stack into a register.
+- [x] **`POP`:** remove the top byte from the downward-growing stack into a register.
   - [x] Define empty-stack errors, whether popped memory is cleared, preserved flags, and execution-event feedback before implementation. Recorded in the technical design and development instruction reference.
   - [x] Add core execution and tests for a PUSH/POP round trip, stack boundaries, state preservation, and invalid registers.
     - Read at `SP`, increment it, preserve the memory byte and `ZF`, and emit a stack-sourced register-write event.
     - Reject empty-stack and invalid-register operations without changing state; test both boundaries and halted execution.
     - Run tests and the production build before staging.
-  - [ ] Add parsing, stack/memory read feedback, syntax help, and reference examples; run tests and the production build.
+  - [x] Add parsing, stack/memory read feedback, syntax help, and reference examples; run tests and the production build. Browser verification remains pending.
 - [ ] **`CALL` and `RET`:** use the stack for return addresses, define address representation and stack-overflow/underflow faults, then show calls and returns in the program view.
 - [ ] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation.
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
@@ -127,7 +129,7 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 
 `PUSH` decrements `SP` before writing, so `SP` points at the top byte after a push. The empty stack has `SP = 256`, and a push at `SP = 0` overflows. Stack writes copy memory before changing it, leaving earlier machine states intact.
 
-`POP` is implemented in the core: it reads the byte at `SP` into a register and increments `SP`, leaving memory and `ZF` unchanged. An empty stack rejects `POP` with an underflow error; a stack-sourced register-write event supports upcoming transfer feedback. Source parsing and interface feedback are the next step. See the [POP contract](technical-design.md#stack-contract-pop).
+`POP` is implemented in the core: it reads the byte at `SP` into a register and increments `SP`, leaving memory and `ZF` unchanged. An empty stack rejects `POP` with an underflow error; a stack-sourced register-write event supports upcoming transfer feedback. Source parsing accepts `POP register`; the interface identifies the stack source, highlights its memory address as read and the destination register as written, and updates stack occupancy. References include a runnable round trip. Browser verification remains pending. See the [POP contract](technical-design.md#stack-contract-pop).
 
 `HALT` advances `PC` past itself and sets `halted`. Further execution is rejected until reset.
 

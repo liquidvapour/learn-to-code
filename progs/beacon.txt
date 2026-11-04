@@ -1,0 +1,24 @@
+; SOS beacon: copy this program into the editor and step through it.
+; Memory 0-2 spells SOS in ASCII; memory 3 counts three flashes.
+; Jump targets are zero-based instruction addresses, not source lines.
+MOV R0, 83     ; S
+STORE R0, 0
+PUSH R0        ; Save S while preparing the middle letter
+MOV R0, 79     ; O
+STORE R0, 1
+POP R0         ; Restore S from the stack
+STORE R0, 2
+MOV R0, 0      ; Flashes completed
+MOV R1, 1      ; Increment and decrement amount
+MOV R2, 3      ; Flashes remaining
+; PC 10: flash again
+ADD R0, R1
+STORE R0, 3    ; Record the flash count
+SUB R2, R1
+MOV R3, 0
+CMP R2, R3     ; Are there any flashes left?
+JZ 17          ; Zero remaining: read back the count
+JMP 10         ; Flashes remain: repeat
+; PC 17: inspect the result
+LOAD R3, 3
+HALT

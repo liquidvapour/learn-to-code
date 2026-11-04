@@ -10,6 +10,7 @@ import {
   type STOREInstruction,
   type LOADInstruction,
   type PUSHInstruction,
+  type POPInstruction,
   type HALTInstruction,
   type Register,
 } from './machine.ts'
@@ -93,6 +94,13 @@ function push(operands: string): PUSHInstruction {
   return { operation: 'PUSH', register: register(operands) }
 }
 
+function pop(operands: string): POPInstruction {
+  if (!operands || /[\s,]/.test(operands)) {
+    throw new Error('Use POP register.')
+  }
+  return { operation: 'POP', register: register(operands) }
+}
+
 function halt(operands: string): HALTInstruction {
   if (operands) {
     throw new Error('HALT takes no operands.')
@@ -122,10 +130,12 @@ function parseInstruction(text: string): Instruction {
       return load(operands)
     case 'PUSH':
       return push(operands)
+    case 'POP':
+      return pop(operands)
     case 'HALT':
       return halt(operands)
     default:
-      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, CMP, JMP, JZ, STORE, LOAD, PUSH, or HALT.`)
+      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, CMP, JMP, JZ, STORE, LOAD, PUSH, POP, or HALT.`)
   }
 }
 

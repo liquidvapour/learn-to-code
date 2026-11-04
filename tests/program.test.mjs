@@ -97,7 +97,7 @@ test('LOAD rejects invalid operands with precise source errors and blocks the wh
 test('unsupported-instruction help includes JMP, CMP, SUB, and LOAD', () => {
   assert.deepEqual(parseProgram('UNKNOWN').errors, [{
     lineNumber: 1,
-    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, JMP, JZ, STORE, LOAD, PUSH, or HALT.',
+    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, JMP, JZ, STORE, LOAD, PUSH, POP, or HALT.',
   }])
 })
 
@@ -350,4 +350,25 @@ test('documented countdown uses JZ to exit and JMP to repeat', () => {
   assert.equal(state.zf, true)
   assert.equal(state.halted, true)
   assert.equal(state.pc, 6)
+})
+
+
+test('POP parses and executes a stack round trip with source mapping', () => {
+  const { program, errors } = parseProgram('MOV R0, 12\nPUSH R0\n; remove top\n pop r1 ; result\nHALT')
+  assert.deepEqual(errors, [])
+  assert.equal(program[2].lineNumber, 4)
+  assert.equal(program[2].source, 'pop r1 ; result')
+  assert.deepEqual(program[2].instruction, { operation: 'POP', register: 'R1' })
+  const state = program.reduce((state, line) => executeInstruction(state, line.instruction).state, createInitialState())
+  assert.equal(state.registers.R1, 12)
+  assert.equal(state.sp, 256)
+  assert.equal(state.memory[255], 12)
+})
+
+test('POP rejects invalid operands and blocks the whole program', () => {
+  for (const operands of ['', 'R0, R1', 'R0 R1', 'R0,']) {
+    const result = parseProgram(`PUSH R0\nPOP ${operands}`)
+    assert.deepEqual(result, { program: [], errors: [{ lineNumber: 2, message: 'Use POP register.' }] })
+  }
+  assert.deepEqual(parseProgram('POP R4').errors, [{ lineNumber: 1, message: 'R4 is not a register. Use R0, R1, R2, or R3.' }])
 })
