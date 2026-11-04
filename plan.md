@@ -104,10 +104,10 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [ ] **`CALL` and `RET`:** use the stack for return addresses and show calls and returns in the program view.
   - [x] Define address representation, target and return validation, stack faults, and feedback in the technical design and instruction reference.
   - [x] Add core CALL and RET execution and tests for encoding, nesting, boundaries, validation, and atomic faults. Tests and production build pass.
-  - [ ] Add parsing, interface feedback, documentation, and an executable call example.
-    - Parse CALL targets and RET; validate targets against the whole program.
+  - [x] Parse CALL targets and RET; validate targets against the whole program and run the Fibonacci example. Tests and production build pass.
+  - [ ] Add interface feedback, documentation, and an executable nested-call example.
     - Show stack-byte reads and writes and explain calls and returns.
-    - Update references and add an executable nested-call example; run tests and build.
+    - Update editor help and references; run tests and build.
 - [ ] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation.
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
 - [ ] **Continuous execution:** add Run/Pause and a speed control while preserving the same step behaviour.

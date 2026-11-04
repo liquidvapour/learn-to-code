@@ -97,7 +97,7 @@ test('LOAD rejects invalid operands with precise source errors and blocks the wh
 test('unsupported-instruction help includes JMP, CMP, SUB, and LOAD', () => {
   assert.deepEqual(parseProgram('UNKNOWN').errors, [{
     lineNumber: 1,
-    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, JMP, JZ, STORE, LOAD, PUSH, POP, or HALT.',
+    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, JMP, JZ, CALL, RET, STORE, LOAD, PUSH, POP, or HALT.',
   }])
 })
 
@@ -371,4 +371,26 @@ test('POP rejects invalid operands and blocks the whole program', () => {
     assert.deepEqual(result, { program: [], errors: [{ lineNumber: 2, message: 'Use POP register.' }] })
   }
   assert.deepEqual(parseProgram('POP R4').errors, [{ lineNumber: 1, message: 'R4 is not a register. Use R0, R1, R2, or R3.' }])
+})
+
+test('CALL and RET parse with source mapping and validate forward targets', () => {
+  const { program, errors } = parseProgram('; header\n call 002 ; subroutine\nHALT\n\n ret ; return')
+  assert.deepEqual(errors, [])
+  assert.deepEqual(program.map(line => line.instruction), [
+    { operation: 'CALL', target: 2 }, { operation: 'HALT' }, { operation: 'RET' },
+  ])
+  assert.deepEqual(program.map(line => line.lineNumber), [2, 3, 5])
+  assert.deepEqual(parseProgram(['CALL 256', ...Array(255).fill('HALT'), 'RET'].join('\n')).errors, [])
+})
+
+test('CALL and RET reject malformed operands and out-of-range targets', () => {
+  for (const operand of ['', '-1', '1.5', '+1', '0,1', '9007199254740992']) {
+    assert.deepEqual(parseProgram(`CALL ${operand}`).errors, [
+      { lineNumber: 1, message: 'CALL target must be an unsigned decimal safe integer.' },
+    ])
+  }
+  assert.deepEqual(parseProgram('HALT\n; unreachable\nCALL 2').errors, [
+    { lineNumber: 3, message: 'CALL target must identify an instruction from 0 to 1.' },
+  ])
+  assert.deepEqual(parseProgram('RET 0').errors, [{ lineNumber: 1, message: 'RET takes no operands.' }])
 })

@@ -7,6 +7,8 @@ import {
   type CMPInstruction,
   type JMPInstruction,
   type JZInstruction,
+  type CALLInstruction,
+  type RETInstruction,
   type STOREInstruction,
   type LOADInstruction,
   type PUSHInstruction,
@@ -77,6 +79,15 @@ function jumpIfZero(operands: string): JZInstruction {
   return { operation: 'JZ', target: branchTarget('JZ', operands) }
 }
 
+function call(operands: string): CALLInstruction {
+  return { operation: 'CALL', target: branchTarget('CALL', operands) }
+}
+
+function ret(operands: string): RETInstruction {
+  if (operands) throw new Error('RET takes no operands.')
+  return { operation: 'RET' }
+}
+
 function store(operands: string): STOREInstruction {
   const [destination, address] = operandPair('STORE', operands, 'address')
   return { operation: 'STORE', register: register(destination), address: byte(address, 'STORE address') }
@@ -124,6 +135,10 @@ function parseInstruction(text: string): Instruction {
       return jumpIfZero(operands)
     case 'JMP':
       return jump(operands)
+    case 'CALL':
+      return call(operands)
+    case 'RET':
+      return ret(operands)
     case 'STORE':
       return store(operands)
     case 'LOAD':
@@ -135,7 +150,7 @@ function parseInstruction(text: string): Instruction {
     case 'HALT':
       return halt(operands)
     default:
-      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, CMP, JMP, JZ, STORE, LOAD, PUSH, POP, or HALT.`)
+      throw new Error(`Unsupported instruction: ${operation}. Use MOV, ADD, SUB, CMP, JMP, JZ, CALL, RET, STORE, LOAD, PUSH, POP, or HALT.`)
   }
 }
 
@@ -156,7 +171,7 @@ export function parseProgram(source: string): { program: ProgramLine[]; errors: 
   // Bounds need the complete instruction list; syntax errors must be fixed first.
   if (errors.length === 0) {
     for (const { instruction, lineNumber } of program) {
-      if ((instruction.operation === 'JMP' || instruction.operation === 'JZ') && instruction.target >= program.length) {
+      if ((instruction.operation === 'JMP' || instruction.operation === 'JZ' || instruction.operation === 'CALL') && instruction.target >= program.length) {
         errors.push({ lineNumber, message: `${instruction.operation} target must identify an instruction from 0 to ${program.length - 1}.` })
       }
     }
