@@ -92,7 +92,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
     - Test both flag values, invalid targets/context, final-instruction fall-through, source mapping, and a runnable conditional example; update references and run tests/build.
 - [ ] **`POP`:** remove the top byte from the downward-growing stack into a register.
   - [x] Define empty-stack errors, whether popped memory is cleared, preserved flags, and execution-event feedback before implementation. Recorded in the technical design and development instruction reference.
-  - [ ] Add core execution and tests for a PUSH/POP round trip, stack boundaries, state preservation, and invalid registers.
+  - [x] Add core execution and tests for a PUSH/POP round trip, stack boundaries, state preservation, and invalid registers.
     - Read at `SP`, increment it, preserve the memory byte and `ZF`, and emit a stack-sourced register-write event.
     - Reject empty-stack and invalid-register operations without changing state; test both boundaries and halted execution.
     - Run tests and the production build before staging.
@@ -127,7 +127,7 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 
 `PUSH` decrements `SP` before writing, so `SP` points at the top byte after a push. The empty stack has `SP = 256`, and a push at `SP = 0` overflows. Stack writes copy memory before changing it, leaving earlier machine states intact.
 
-`POP` is planned to read the byte at `SP` into a register and increment `SP`, leaving memory and `ZF` unchanged. An empty stack rejects `POP` with an underflow error; a stack-sourced register-write event will support transfer feedback. See the [POP contract](technical-design.md#stack-contract-pop).
+`POP` is implemented in the core: it reads the byte at `SP` into a register and increments `SP`, leaving memory and `ZF` unchanged. An empty stack rejects `POP` with an underflow error; a stack-sourced register-write event supports upcoming transfer feedback. Source parsing and interface feedback are the next step. See the [POP contract](technical-design.md#stack-contract-pop).
 
 `HALT` advances `PC` past itself and sets `halted`. Further execution is rejected until reset.
 

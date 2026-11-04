@@ -13,6 +13,7 @@ const InstrictionJZ = 'JZ'
 const InstrictionSTORE = 'STORE'
 const InstrictionLOAD = 'LOAD'
 const InstrictionPUSH = 'PUSH'
+const InstrictionPOP = 'POP'
 const InstrictionHALT = 'HALT'
 
 export type MOVInstruction =  Readonly<{
@@ -67,6 +68,11 @@ export type PUSHInstruction = Readonly<{
   register: Register
 }>
 
+export type POPInstruction = Readonly<{
+  operation: 'POP'
+  register: Register
+}>
+
 export type HALTInstruction = Readonly<{
   operation: 'HALT'
 }>
@@ -83,6 +89,7 @@ export type Instruction =
   | STOREInstruction
   | LOADInstruction 
   | PUSHInstruction 
+  | POPInstruction
   | HALTInstruction
 
 export type MachineState = Readonly<{
@@ -101,6 +108,9 @@ type RegisterWriteSource = Readonly<{
   sourceRegister: Register
 }> | Readonly<{
   source: 'memory'
+  address: number
+}> | Readonly<{
+  source: 'stack'
   address: number
 }>
 
@@ -286,6 +296,15 @@ function push(state: MachineState, instruction: PUSHInstruction) {
   })
 }
 
+function pop(state: MachineState, instruction: POPInstruction) {
+  readRegister(state, instruction.register)
+  if (state.sp === MEMORY_SIZE) {
+    throw new RangeError('Stack underflow: no byte available for POP')
+  }
+  return writeRegister(state, instruction.register, state.memory[state.sp],
+    { source: 'stack', address: state.sp }, { sp: state.sp + 1 })
+}
+
 function jump(state: MachineState, instruction: JMPInstruction | JZInstruction, programLength?: number): StepResult {
   if (programLength === undefined || !Number.isSafeInteger(programLength) || programLength < 0) {
     throw new RangeError(`${instruction.operation} requires a non-negative safe integer program length`)
@@ -335,6 +354,8 @@ export function executeInstruction(
       return load(state, instruction)
     case InstrictionPUSH:
       return push(state, instruction)
+    case InstrictionPOP:
+      return pop(state, instruction)
     case InstrictionHALT:
       return halt(state)
     default:

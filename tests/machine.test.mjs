@@ -115,6 +115,40 @@ test('PUSH rejects a full stack without changing memory', () => {
   assert.equal(full.memory[0], 0)
 })
 
+test('POP restores a pushed byte and preserves memory and flags', () => {
+  for (const zf of [false, true]) {
+    const initial = { ...createInitialState(), registers: { R0: 42, R1: 7, R2: 8, R3: 9 }, zf }
+    const pushed = executeInstruction(initial, { operation: 'PUSH', register: 'R0' }).state
+    const before = structuredClone(pushed)
+    const result = executeInstruction(pushed, { operation: 'POP', register: 'R1' })
+    assert.deepEqual(result.state, { ...pushed, registers: { ...pushed.registers, R1: 42 }, sp: 256, pc: 2 })
+    assert.deepEqual(pushed, before)
+    assert.equal(result.state.memory[255], 42)
+    assert.deepEqual(result.events, [{ kind: 'register-write', register: 'R1', previous: 7, value: 42, source: 'stack', address: 255 }])
+  }
+})
+
+test('POP reads the bottom of a full stack and rejects invalid operations without mutation', () => {
+  const full = { ...createInitialState(), sp: 0 }
+  full.memory[0] = 123
+  const before = structuredClone(full)
+  const result = executeInstruction(full, { operation: 'POP', register: 'R3' })
+  assert.equal(result.state.registers.R3, 123)
+  assert.equal(result.state.sp, 1)
+  assert.deepEqual(full, before)
+  assert.deepEqual(result.events[0], { kind: 'register-write', register: 'R3', previous: 0, value: 123, source: 'stack', address: 0 })
+
+  const empty = createInitialState()
+  const emptyBefore = structuredClone(empty)
+  assert.throws(() => executeInstruction(empty, { operation: 'POP', register: 'R0' }), /Stack underflow.*POP/)
+  assert.deepEqual(empty, emptyBefore)
+  assert.throws(() => executeInstruction(full, { operation: 'POP', register: 'R4' }), /Unknown register: R4/)
+  assert.deepEqual(full, before)
+  const halted = { ...full, halted: true }
+  assert.throws(() => executeInstruction(halted, { operation: 'POP', register: 'R0' }), /Machine is halted/)
+  assert.deepEqual(halted, { ...before, halted: true })
+})
+
 test('STORE overwrites one addressed byte, preserves other state, and reports the write', () => {
   const initial = createInitialState()
   const state = {
