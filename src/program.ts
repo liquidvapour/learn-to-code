@@ -1,5 +1,6 @@
 import {
   REGISTER_NAMES,
+  MAX_PROGRAM_LENGTH,
   type Instruction,
   type MOVInstruction,
   type ADDInstruction,
@@ -163,6 +164,10 @@ export function parseProgram(source: string): { program: ProgramLine[]; errors: 
     const lineNumber = index + 1
     try {
       const instruction = parseInstruction(text)
+      if (program.length === MAX_PROGRAM_LENGTH) {
+        errors.push({ lineNumber, message: `Program cannot exceed ${MAX_PROGRAM_LENGTH} instructions.` })
+        return
+      }
       program.push({ source: sourceLine.trim(), lineNumber, instruction })
     } catch (error) {
       errors.push({ lineNumber, message: (error as Error).message })

@@ -394,3 +394,12 @@ test('CALL and RET reject malformed operands and out-of-range targets', () => {
   ])
   assert.deepEqual(parseProgram('RET 0').errors, [{ lineNumber: 1, message: 'RET takes no operands.' }])
 })
+
+
+test('program length counts instructions and rejects the first beyond 65535', () => {
+  const source = ['; comment', ...Array(65535).fill('HALT')].join('\n')
+  assert.equal(parseProgram(source).program.length, 65535)
+  assert.deepEqual(parseProgram(`${source}\nHALT`), {
+    program: [], errors: [{ lineNumber: 65537, message: 'Program cannot exceed 65535 instructions.' }],
+  })
+})

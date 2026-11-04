@@ -476,10 +476,10 @@ test('JMP rejects invalid targets, including program end and empty programs, wit
 test('JMP requires valid program-length context without changing state', () => {
   const state = createInitialState()
   const before = structuredClone(state)
-  for (const programLength of [undefined, null, '4', -1, 1.5, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+  for (const programLength of [undefined, null, '4', -1, 1.5, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1, 65536]) {
     assert.throws(
       () => executeInstruction(state, { operation: 'JMP', target: 0 }, programLength),
-      { name: 'RangeError', message: 'JMP requires a non-negative safe integer program length' },
+      { name: 'RangeError', message: 'JMP requires a program length from 0 to 65535' },
     )
     assert.deepEqual(state, before)
   }
@@ -546,7 +546,7 @@ test('JZ validates targets and context even for untaken branches without changin
     }
     for (const length of [undefined, null, '4', -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
       assert.throws(() => executeInstruction(state, { operation: 'JZ', target: 0 }, length), {
-        name: 'RangeError', message: 'JZ requires a non-negative safe integer program length',
+        name: 'RangeError', message: 'JZ requires a program length from 0 to 65535',
       })
       assert.deepEqual(state, before)
     }
@@ -570,10 +570,10 @@ test('a final JZ falls through without halting, or loops when ZF is set', () => 
 test('CALL and RET encode return addresses and support nested calls', () => {
   const initial = { ...createInitialState(), pc: 255, zf: true, registers: { R0: 9, R1: 2, R2: 3, R3: 4 } }
   const first = executeInstruction(initial, { operation: 'CALL', target: 10 }, 300)
-  assert.equal(first.state.sp, 249)
-  assert.deepEqual([...first.state.memory.slice(249)], [0, 1, 0, 0, 0, 0, 0])
+  assert.equal(first.state.sp, 254)
+  assert.deepEqual([...first.state.memory.slice(254)], [0, 1])
   assert.deepEqual(first.events[0], { kind: 'stack-branch', operation: 'CALL', previousPc: 255, nextPc: 10, returnAddress: 256,
-    stackBytes: [0, 1, 0, 0, 0, 0, 0].map((value, i) => ({ address: 249 + i, value })) })
+    stackBytes: [0, 1].map((value, i) => ({ address: 254 + i, value })) })
   const nested = executeInstruction(first.state, { operation: 'CALL', target: 20 }, 300)
   const inner = executeInstruction(nested.state, { operation: 'RET' }, 300)
   const outer = executeInstruction(inner.state, { operation: 'RET' }, 300)
@@ -588,15 +588,15 @@ test('CALL and RET encode return addresses and support nested calls', () => {
   assert.deepEqual(outer.events[0].stackBytes, first.events[0].stackBytes)
 })
 
-test('CALL and RET accept exact boundaries and safe integer return addresses', () => {
+test('CALL and RET accept exact boundaries and 16-bit return addresses', () => {
   const initial = createInitialState()
-  const last = executeInstruction({ ...initial, pc: 299, sp: 7 }, { operation: 'CALL', target: 0 }, 300)
+  const last = executeInstruction({ ...initial, pc: 299, sp: 2 }, { operation: 'CALL', target: 0 }, 300)
   assert.equal(last.state.sp, 0)
   const returned = executeInstruction(last.state, { operation: 'RET' }, 300)
   assert.equal(returned.state.pc, 300)
-  assert.equal(returned.state.sp, 7)
-  const max = executeInstruction({ ...initial, pc: Number.MAX_SAFE_INTEGER - 1 }, { operation: 'CALL', target: 0 }, Number.MAX_SAFE_INTEGER)
-  assert.equal(executeInstruction(max.state, { operation: 'RET' }, Number.MAX_SAFE_INTEGER).state.pc, Number.MAX_SAFE_INTEGER)
+  assert.equal(returned.state.sp, 2)
+  const max = executeInstruction({ ...initial, pc: 65534 }, { operation: 'CALL', target: 0 }, 65535)
+  assert.equal(executeInstruction(max.state, { operation: 'RET' }, 65535).state.pc, 65535)
 })
 
 test('CALL and RET reject invalid context, addresses and stack capacity atomically', () => {
@@ -606,15 +606,14 @@ test('CALL and RET reject invalid context, addresses and stack capacity atomical
     [initial, { operation: 'RET' }, -1, /RET.*program length/],
     [initial, { operation: 'CALL', target: 2 }, 2, /CALL target/],
     [{ ...initial, pc: 2 }, { operation: 'CALL', target: 0 }, 2, /CALL PC/],
-    [{ ...initial, sp: 6 }, { operation: 'CALL', target: 0 }, 2, /CALL stack overflow/],
-    [{ ...initial, sp: 250 }, { operation: 'RET' }, 2, /RET stack underflow/],
+    [{ ...initial, sp: 1 }, { operation: 'CALL', target: 0 }, 2, /CALL stack overflow/],
+    [{ ...initial, sp: 255 }, { operation: 'RET' }, 2, /RET stack underflow/],
   ]
-  const invalid = { ...initial, sp: 249, memory: initial.memory.slice() }
-  invalid.memory[249] = 3
+  const invalid = { ...initial, sp: 254, memory: initial.memory.slice() }
+  invalid.memory[254] = 3
   cases.push([invalid, { operation: 'RET' }, 2, /RET return address/])
-  const unsafe = { ...initial, sp: 249, memory: initial.memory.slice() }
-  unsafe.memory[255] = 32
-  cases.push([unsafe, { operation: 'RET' }, Number.MAX_SAFE_INTEGER, /RET return address/])
+  cases.push([initial, { operation: 'CALL', target: 0 }, 65536, /CALL.*program length/])
+  cases.push([initial, { operation: 'RET' }, 65536, /RET.*program length/])
   for (const [state, instruction, length, error] of cases) {
     const before = structuredClone(state)
     assert.throws(() => executeInstruction(state, instruction, length), error)

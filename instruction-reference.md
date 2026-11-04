@@ -111,7 +111,7 @@ Both operands must be registers. Execution emits a comparison event containing b
 
 Replace `PC` with the target and preserve registers, memory, `SP`, `ZF`, and halted status. Targets must be safe integers identifying an existing instruction (`0`–`N - 1`), excluding blank and comment-only lines. Source uses unsigned decimal integers. Forward, backward, and self-jumps are valid; targets above 255 are valid in sufficiently long programs. Jumping to `N` is invalid.
 
-After syntax validation succeeds, the parser validates targets against the complete program and blocks execution on any error, reporting the branch source line. Unreachable branches are validated too. The core requires a non-negative safe integer program length as the third argument to `executeInstruction` and rejects missing/invalid context or invalid targets with a `RangeError` before changing state. It emits a branch event containing the operation, previous PC, target, next PC, and taken status. Debug mode displays decimal instruction addresses labelled PC alongside source line numbers labelled Line; the Next marker follows the target and the explanation shows the previous and next PC. See the [control-flow contract](technical-design.md#control-flow-contract-jmp-and-jz) for validation, completion, and event details.
+After syntax validation succeeds, the parser validates targets against the complete program and blocks execution on any error, reporting the branch source line. Unreachable branches are validated too. The core requires a program length from 0 to 65,535 as the third argument to `executeInstruction` and rejects missing/invalid context or invalid targets with a `RangeError` before changing state. It emits a branch event containing the operation, previous PC, target, next PC, and taken status. Debug mode displays decimal instruction addresses labelled PC alongside source line numbers labelled Line; the Next marker follows the target and the explanation shows the previous and next PC. See the [control-flow contract](technical-design.md#control-flow-contract-jmp-and-jz) for validation, completion, and event details.
 
 ```text
 MOV R0, 5
@@ -162,13 +162,13 @@ POP R1
 
 `CALL 20`: Save the next instruction address on the stack, then jump to `20`.
 
-Planned: validate the target like `JMP`, save `PC + 1` in seven little-endian stack bytes, and jump. Fewer than seven free bytes cause an atomic stack-overflow fault. A call at the final instruction may return to program end. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
+Planned: validate the target like `JMP`, save `PC + 1` in two little-endian stack bytes, and jump. Fewer than two free bytes cause an atomic stack-overflow fault. A call at the final instruction may return to program end. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
 
 ### RET
 
 `RET`: Restore a saved instruction address from the stack into `PC`.
 
-Planned: decode seven bytes at `SP`, validate the return address from `0` through program length inclusive, then advance `SP` by seven and jump. Too few bytes or an invalid address causes an atomic fault; bytes remain in memory. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
+Planned: decode two bytes at `SP`, validate the return address from `0` through program length inclusive, then advance `SP` by two and jump. Too few bytes or an invalid address causes an atomic fault; bytes remain in memory. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
 
 ### HALT
 

@@ -1,5 +1,6 @@
 export const REGISTER_NAMES = ['R0', 'R1', 'R2', 'R3'] as const
 export const MEMORY_SIZE = 256
+export const MAX_PROGRAM_LENGTH = 0xffff
 const MAX_BYTE = 0xff
 
 export type Register = (typeof REGISTER_NAMES)[number]
@@ -320,8 +321,8 @@ function pop(state: MachineState, instruction: POPInstruction) {
 }
 
 function validateProgramLength(operation: string, programLength?: number): asserts programLength is number {
-  if (programLength === undefined || !Number.isSafeInteger(programLength) || programLength < 0) {
-    throw new RangeError(`${operation} requires a non-negative safe integer program length`)
+  if (programLength === undefined || !Number.isSafeInteger(programLength) || programLength < 0 || programLength > MAX_PROGRAM_LENGTH) {
+    throw new RangeError(`${operation} requires a program length from 0 to 65535`)
   }
 }
 
@@ -344,7 +345,7 @@ function jump(state: MachineState, instruction: JMPInstruction | JZInstruction, 
   }
 }
 
-const RETURN_ADDRESS_BYTES = 7
+const RETURN_ADDRESS_BYTES = 2
 
 function call(state: MachineState, instruction: CALLInstruction, programLength?: number): StepResult {
   validateProgramLength('CALL', programLength)
