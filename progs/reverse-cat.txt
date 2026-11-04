@@ -1,25 +1,25 @@
-; Write CAT to memory, then reverse it in place using the stack.
-; Watch addresses 0-2 in the ASCII view and the stack as you step.
-MOV R0, 67     ; C
-STORE R0, 0
-MOV R0, 65     ; A
-STORE R0, 1
-MOV R0, 84     ; T
-STORE R0, 2
+    ; Write CAT to memory, then reverse it in place using the stack.
+    ; Watch addresses 0-2 in the ASCII view and the stack as you step.
+    MOV R0, 67     ; C
+    STORE R0, 0
+    MOV R0, 65     ; A
+    STORE R0, 1
+    MOV R0, 84     ; T
+    STORE R0, 2
 
-; Save the letters in their original order.
-LOAD R0, 0
-PUSH R0
-LOAD R0, 1
-PUSH R0
-LOAD R0, 2
-PUSH R0
+    ; Save the letters in their original order.
+    LOAD R0, 0
+    PUSH R0
+    LOAD R0, 1
+    PUSH R0
+    LOAD R0, 2
+    PUSH R0
 
-; The last letter pushed comes out first.
-POP R0         ; T
-STORE R0, 0
-POP R0         ; A
-STORE R0, 1
-POP R0         ; C
-STORE R0, 2
-HALT           ; Memory now reads TAC; the stack is empty.
+    ; The last letter pushed comes out first.
+    POP R0         ; T
+    STORE R0, 0
+    POP R0         ; A
+    STORE R0, 1
+    POP R0         ; C
+    STORE R0, 2
+    HALT           ; Memory now reads TAC; the stack is empty.
