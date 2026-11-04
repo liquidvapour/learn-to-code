@@ -1,14 +1,19 @@
-; load
-MOV R3, 1  ; decrement by
-MOV R2, 8  ; number of fib numbers to generate
-MOV R0, 1
-MOV R1, 1
-STORE R0, 0
-; start
-ADD R0, R1 
+; Generate eight Fibonacci numbers after the initial pair (1, 1).
+; The result is 55 in R0 and memory address 0. Targets are zero-based PCs.
+MOV R3, 1      ; Decrement amount
+MOV R2, 8      ; Numbers remaining
+MOV R0, 1      ; Current number
+MOV R1, 1      ; Previous number
+STORE R0, 0    ; Save the current number
+; PC 5: generate the next number
+CALL 10
+SUB R2, R3
+JZ 9           ; Finished
+JMP 5
+; PC 9: stop before the subroutine
+HALT
+; PC 10: advance the pair and return
+ADD R0, R1
 LOAD R1, 0
 STORE R0, 0
-SUB R2, R3 ; dec counter
-JZ 11      ; jump to end when done
-JMP 4
-HALT
+RET
