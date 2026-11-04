@@ -117,6 +117,15 @@ Source line 5 has instruction address `2`, and source line 6 has address `3`. Wi
 
 Implementation checks should cover first/last targets, forward/backward/self-jumps, targets above 255 in longer programs, invalid numeric targets and missing context, both `JZ` outcomes, untaken invalid targets, last-instruction fall-through, state preservation, source-line mapping, and whole-program rejection.
 
+## Stack contract: POP
+
+`POP` is planned; this contract guides its implementation.
+
+- **Operation:** `POP destination` reads the byte at `SP` into the destination register, then increments `SP` by one and advances `PC` by one. A full stack (`SP = 0`) can be popped; popping its last occupied byte leaves `SP = 256`.
+- **Empty stack:** When `SP = 256`, reject the instruction with a `RangeError` identifying stack underflow and `POP`, before producing a result. Validate the destination register as well; invalid operands and underflow leave the input state untouched. The existing halted-state rejection applies.
+- **Memory and flags:** Do not clear or otherwise change the popped memory byte. It is no longer occupied by the stack, but remains readable and may later be overwritten. Preserve `ZF`, all other registers, memory, and the halted flag.
+- **Feedback:** Emit a register-write event identifying the stack as its source, the original address, destination, previous register value, and transferred byte. The interface can highlight the memory/stack read and register write, explain the transfer and `SP` increment, and clear the cues on the next step or reset. No memory-write or flag-write cue is produced.
+
 ## Memory as a hex explorer
 
 Memory is a first-class, inspectable part of the interface.

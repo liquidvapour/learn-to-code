@@ -91,8 +91,11 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
     - Parse and validate all JZ targets, including untaken branches; show taken/untaken explanations and a flag-read cue.
     - Test both flag values, invalid targets/context, final-instruction fall-through, source mapping, and a runnable conditional example; update references and run tests/build.
 - [ ] **`POP`:** remove the top byte from the downward-growing stack into a register.
-  - [ ] Define empty-stack errors, whether popped memory is cleared, preserved flags, and execution-event feedback before implementation.
+  - [x] Define empty-stack errors, whether popped memory is cleared, preserved flags, and execution-event feedback before implementation. Recorded in the technical design and development instruction reference.
   - [ ] Add core execution and tests for a PUSH/POP round trip, stack boundaries, state preservation, and invalid registers.
+    - Read at `SP`, increment it, preserve the memory byte and `ZF`, and emit a stack-sourced register-write event.
+    - Reject empty-stack and invalid-register operations without changing state; test both boundaries and halted execution.
+    - Run tests and the production build before staging.
   - [ ] Add parsing, stack/memory read feedback, syntax help, and reference examples; run tests and the production build.
 - [ ] **`CALL` and `RET`:** use the stack for return addresses, define address representation and stack-overflow/underflow faults, then show calls and returns in the program view.
 - [ ] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation.
@@ -123,6 +126,8 @@ The current machine uses zero-based instruction indices in `PC`. `MOV` accepts a
 `CMP` is available in the machine core: it compares two registers, sets `ZF` when equal and clears it otherwise, and advances `PC` while preserving registers, memory, and `SP`. Its comparison event records both register names, their values, and the equality result; the app can describe this event. Core tests cover equality, inequality, self-comparison, all register pairs, state preservation, invalid registers, and halted execution. Source parsing now accepts `CMP destination, source`, with case/spacing/comment support and whole-program validation. Both compared registers are highlighted as reads; the existing explanation shows their values, equality, and resulting ZF. Editor help, README, and both references include CMP and an executable equal/unequal/self-comparison example. Parser/core tests and the production build pass; browser verification of comparison explanations, read highlights, and cue clearing remains pending.
 
 `PUSH` decrements `SP` before writing, so `SP` points at the top byte after a push. The empty stack has `SP = 256`, and a push at `SP = 0` overflows. Stack writes copy memory before changing it, leaving earlier machine states intact.
+
+`POP` is planned to read the byte at `SP` into a register and increment `SP`, leaving memory and `ZF` unchanged. An empty stack rejects `POP` with an underflow error; a stack-sourced register-write event will support transfer feedback. See the [POP contract](technical-design.md#stack-contract-pop).
 
 `HALT` advances `PC` past itself and sets `halted`. Further execution is rejected until reset.
 

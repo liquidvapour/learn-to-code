@@ -32,7 +32,7 @@ The Implemented column indicates availability through both the machine core and 
 | `JMP target` | Yes | Jump unconditionally. | Preserved |
 | `JZ target` | Yes | Jump when `ZF` is set. | Preserved |
 | `PUSH source` | Yes | Decrement `SP`, then copy the register into memory at `SP`. | Preserved |
-| `POP destination` | No | Copy the top stack byte into a register and remove it from the stack. | Undecided |
+| `POP destination` | No | Copy the top stack byte into a register and remove it from the stack. | Preserved |
 | `CALL target` | No | Push a return address and jump. | Undecided |
 | `RET` | No | Pop a return address and jump back. | Undecided |
 | `HALT` | Yes | Advance `PC` and set the halted state. | Preserved |
@@ -150,9 +150,7 @@ From an empty stack, `SP` becomes `255` and memory at `255` becomes `12`. A seco
 
 ### POP
 
-`POP R0`: Read the byte at `SP` into `R0`, then increase `SP`.
-
-Open decisions and remaining work: Define empty-stack faults, whether the removed memory byte is cleared, flag effects, and execution events.
+`POP R0` will read the byte at `SP` into `R0`, increase `SP` by one, and advance `PC`. Popping an empty stack (`SP = 256`) will throw a stack-underflow error without changing state. The byte remains in memory but is no longer part of the stack. Other registers, memory, and `ZF` are preserved. A stack-sourced register-write event will identify the address and transferred value for read/write feedback. See the [POP contract](technical-design.md#stack-contract-pop).
 
 ### CALL
 
