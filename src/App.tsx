@@ -36,6 +36,9 @@ function describeEvent(event: MachineEvent | null) {
     }
     return `${event.operation} to instruction ${event.target}: PC ${event.previousPc} → ${event.nextPc}`
   }
+  if (event.kind === 'stack-branch') {
+    return `${event.operation}: PC ${event.previousPc} → ${event.nextPc}, return address ${event.returnAddress}`
+  }
   if (event.kind === 'comparison') {
     return `${event.register} (${event.value}) ${event.equal ? '=' : '≠'} ${event.sourceRegister} (${event.sourceValue}) → ZF = ${Number(event.equal)}`
   }

@@ -10,6 +10,8 @@ const InstrictionSUB = 'SUB'
 const InstrictionCMP = 'CMP'
 const InstrictionJMP = 'JMP'
 const InstrictionJZ = 'JZ'
+const InstrictionCALL = 'CALL'
+const InstrictionRET = 'RET'
 const InstrictionSTORE = 'STORE'
 const InstrictionLOAD = 'LOAD'
 const InstrictionPUSH = 'PUSH'
@@ -50,6 +52,9 @@ export type JZInstruction = Readonly<{
   target: number
 }>
 
+export type CALLInstruction = Readonly<{ operation: 'CALL'; target: number }>
+export type RETInstruction = Readonly<{ operation: 'RET' }>
+
 export type STOREInstruction = Readonly<{
   operation: 'STORE'
   register: Register
@@ -86,6 +91,8 @@ export type Instruction =
   | CMPInstruction
   | JMPInstruction
   | JZInstruction
+  | CALLInstruction
+  | RETInstruction
   | STOREInstruction
   | LOADInstruction 
   | PUSHInstruction 
@@ -139,6 +146,13 @@ export type MachineEvent = Readonly<({
   target: number
   nextPc: number
   taken: boolean
+}> | Readonly<{
+  kind: 'stack-branch'
+  operation: 'CALL' | 'RET'
+  previousPc: number
+  nextPc: number
+  returnAddress: number
+  stackBytes: readonly Readonly<{ address: number; value: number }>[]
 }> | Readonly<{
   kind: 'halt'
 }>
@@ -305,14 +319,22 @@ function pop(state: MachineState, instruction: POPInstruction) {
     { source: 'stack', address: state.sp }, { sp: state.sp + 1 })
 }
 
-function jump(state: MachineState, instruction: JMPInstruction | JZInstruction, programLength?: number): StepResult {
+function validateProgramLength(operation: string, programLength?: number): asserts programLength is number {
   if (programLength === undefined || !Number.isSafeInteger(programLength) || programLength < 0) {
-    throw new RangeError(`${instruction.operation} requires a non-negative safe integer program length`)
+    throw new RangeError(`${operation} requires a non-negative safe integer program length`)
   }
-  const { target } = instruction
+}
+
+function validateTarget(operation: string, target: number, programLength: number) {
   if (!Number.isSafeInteger(target) || target < 0 || target >= programLength) {
-    throw new RangeError(`${instruction.operation} target must be a safe integer identifying an instruction in the program`)
+    throw new RangeError(`${operation} target must be a safe integer identifying an instruction in the program`)
   }
+}
+
+function jump(state: MachineState, instruction: JMPInstruction | JZInstruction, programLength?: number): StepResult {
+  validateProgramLength(instruction.operation, programLength)
+  const { target } = instruction
+  validateTarget(instruction.operation, target, programLength)
 
   const taken = instruction.operation === 'JMP' || state.zf
   const nextPc = taken ? target : state.pc + 1
@@ -320,6 +342,46 @@ function jump(state: MachineState, instruction: JMPInstruction | JZInstruction, 
     state: { ...state, pc: nextPc },
     events: [{ kind: 'branch', operation: instruction.operation, previousPc: state.pc, target, nextPc, taken }],
   }
+}
+
+const RETURN_ADDRESS_BYTES = 7
+
+function call(state: MachineState, instruction: CALLInstruction, programLength?: number): StepResult {
+  validateProgramLength('CALL', programLength)
+  validateTarget('CALL', instruction.target, programLength)
+  if (!Number.isSafeInteger(state.pc) || state.pc < 0 || state.pc >= programLength) {
+    throw new RangeError('CALL PC must identify an instruction in the program')
+  }
+  if (state.sp < RETURN_ADDRESS_BYTES) throw new RangeError('CALL stack overflow')
+  const returnAddress = state.pc + 1
+  const sp = state.sp - RETURN_ADDRESS_BYTES
+  const memory = state.memory.slice()
+  let remaining = returnAddress
+  const stackBytes = Array.from({ length: RETURN_ADDRESS_BYTES }, (_, offset) => {
+    const value = remaining % 256
+    remaining = Math.floor(remaining / 256)
+    const address = sp + offset
+    memory[address] = value
+    return { address, value }
+  })
+  return { state: { ...state, memory, sp, pc: instruction.target }, events: [{
+    kind: 'stack-branch', operation: 'CALL', previousPc: state.pc, nextPc: instruction.target, returnAddress, stackBytes,
+  }] }
+}
+
+function ret(state: MachineState, programLength?: number): StepResult {
+  validateProgramLength('RET', programLength)
+  if (state.sp > MEMORY_SIZE - RETURN_ADDRESS_BYTES) throw new RangeError('RET stack underflow')
+  const stackBytes = Array.from({ length: RETURN_ADDRESS_BYTES }, (_, offset) => ({
+    address: state.sp + offset, value: state.memory[state.sp + offset],
+  }))
+  const returnAddress = stackBytes.reduceRight((value, byte) => value * 256 + byte.value, 0)
+  if (!Number.isSafeInteger(returnAddress) || returnAddress > programLength) {
+    throw new RangeError('RET return address must be a safe integer from 0 through the program length')
+  }
+  return { state: { ...state, sp: state.sp + RETURN_ADDRESS_BYTES, pc: returnAddress }, events: [{
+    kind: 'stack-branch', operation: 'RET', previousPc: state.pc, nextPc: returnAddress, returnAddress, stackBytes,
+  }] }
 }
 
 function halt(state: MachineState) {
@@ -348,6 +410,10 @@ export function executeInstruction(
     case InstrictionJMP:
     case InstrictionJZ:
       return jump(state, instruction, programLength)
+    case InstrictionCALL:
+      return call(state, instruction, programLength)
+    case InstrictionRET:
+      return ret(state, programLength)
     case InstrictionSTORE:
       return store(state, instruction)
     case InstrictionLOAD:

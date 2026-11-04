@@ -566,3 +566,61 @@ test('a final JZ falls through without halting, or loops when ZF is set', () => 
     assert.deepEqual(halted, { ...state, halted: true })
   }
 })
+
+test('CALL and RET encode return addresses and support nested calls', () => {
+  const initial = { ...createInitialState(), pc: 255, zf: true, registers: { R0: 9, R1: 2, R2: 3, R3: 4 } }
+  const first = executeInstruction(initial, { operation: 'CALL', target: 10 }, 300)
+  assert.equal(first.state.sp, 249)
+  assert.deepEqual([...first.state.memory.slice(249)], [0, 1, 0, 0, 0, 0, 0])
+  assert.deepEqual(first.events[0], { kind: 'stack-branch', operation: 'CALL', previousPc: 255, nextPc: 10, returnAddress: 256,
+    stackBytes: [0, 1, 0, 0, 0, 0, 0].map((value, i) => ({ address: 249 + i, value })) })
+  const nested = executeInstruction(first.state, { operation: 'CALL', target: 20 }, 300)
+  const inner = executeInstruction(nested.state, { operation: 'RET' }, 300)
+  const outer = executeInstruction(inner.state, { operation: 'RET' }, 300)
+  assert.equal(inner.state.pc, 11)
+  assert.equal(outer.state.pc, 256)
+  assert.equal(outer.state.sp, 256)
+  assert.equal(outer.state.zf, true)
+  assert.deepEqual(outer.state.registers, initial.registers)
+  assert.equal(outer.state.memory, inner.state.memory)
+  assert.equal(initial.memory.every(byte => byte === 0), true)
+  assert.equal(outer.events[0].operation, 'RET')
+  assert.deepEqual(outer.events[0].stackBytes, first.events[0].stackBytes)
+})
+
+test('CALL and RET accept exact boundaries and safe integer return addresses', () => {
+  const initial = createInitialState()
+  const last = executeInstruction({ ...initial, pc: 299, sp: 7 }, { operation: 'CALL', target: 0 }, 300)
+  assert.equal(last.state.sp, 0)
+  const returned = executeInstruction(last.state, { operation: 'RET' }, 300)
+  assert.equal(returned.state.pc, 300)
+  assert.equal(returned.state.sp, 7)
+  const max = executeInstruction({ ...initial, pc: Number.MAX_SAFE_INTEGER - 1 }, { operation: 'CALL', target: 0 }, Number.MAX_SAFE_INTEGER)
+  assert.equal(executeInstruction(max.state, { operation: 'RET' }, Number.MAX_SAFE_INTEGER).state.pc, Number.MAX_SAFE_INTEGER)
+})
+
+test('CALL and RET reject invalid context, addresses and stack capacity atomically', () => {
+  const initial = createInitialState()
+  const cases = [
+    [initial, { operation: 'CALL', target: 0 }, undefined, /CALL.*program length/],
+    [initial, { operation: 'RET' }, -1, /RET.*program length/],
+    [initial, { operation: 'CALL', target: 2 }, 2, /CALL target/],
+    [{ ...initial, pc: 2 }, { operation: 'CALL', target: 0 }, 2, /CALL PC/],
+    [{ ...initial, sp: 6 }, { operation: 'CALL', target: 0 }, 2, /CALL stack overflow/],
+    [{ ...initial, sp: 250 }, { operation: 'RET' }, 2, /RET stack underflow/],
+  ]
+  const invalid = { ...initial, sp: 249, memory: initial.memory.slice() }
+  invalid.memory[249] = 3
+  cases.push([invalid, { operation: 'RET' }, 2, /RET return address/])
+  const unsafe = { ...initial, sp: 249, memory: initial.memory.slice() }
+  unsafe.memory[255] = 32
+  cases.push([unsafe, { operation: 'RET' }, Number.MAX_SAFE_INTEGER, /RET return address/])
+  for (const [state, instruction, length, error] of cases) {
+    const before = structuredClone(state)
+    assert.throws(() => executeInstruction(state, instruction, length), error)
+    assert.deepEqual(state, before)
+  }
+  for (const instruction of [{ operation: 'CALL', target: 0 }, { operation: 'RET' }]) {
+    assert.throws(() => executeInstruction({ ...initial, halted: true }, instruction, 1), /halted/)
+  }
+})
