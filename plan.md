@@ -111,7 +111,9 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
     - Update editor help and references; run tests and build.
 - [ ] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation.
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
-- [ ] **Continuous execution:** add Run/Pause and a speed control while preserving the same step behaviour.
+- [ ] **Continuous execution:**
+  - [x] Add Play/Pause next to Step at a fixed pace, stopping on completion, faults, reset, editing, or navigation; preserve step feedback. Tests and production build pass; browser verification remains pending.
+  - [ ] Add a speed control for continuous execution.
 - [ ] **Movement cues:** extend the persistent read/write highlights with transfer motion between panels and explicit flag/stack-pointer change cues; retain reduced-motion support.
 - [ ] **Byte inspector:** let a learner select a memory byte and see its address, hex, unsigned decimal, binary, and ASCII interpretations.
 

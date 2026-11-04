@@ -12,11 +12,13 @@ import {
 import { parseProgram, SAMPLE_SOURCE } from './program'
 
 const BYTES_PER_ROW = 16
+const PLAY_INTERVAL_MS = 500
 const memoryRows = Array.from({ length: MEMORY_SIZE / BYTES_PER_ROW }, (_, row) => row * BYTES_PER_ROW)
 
 type ExecutionView = {
   machine: MachineState
   lastEvent: MachineEvent | null
+  error: string | null
 }
 
 function hex(value: number, width = 2) {
@@ -28,7 +30,7 @@ function asciiCharacter(value: number) {
 }
 
 function describeEvent(event: MachineEvent | null) {
-  if (event === null) return 'Press Step to execute the highlighted instruction.'
+  if (event === null) return 'Press Step or Play to execute the highlighted instruction.'
   if (event.kind === 'halt') return 'HALT stopped execution. Reset to run again.'
   if (event.kind === 'branch') {
     if (event.operation === 'JZ') {
@@ -57,9 +59,11 @@ function describeEvent(event: MachineEvent | null) {
 
 function App() {
   const [showDocs, setShowDocs] = useState(() => window.location.hash === '#instructions')
+  const [playing, setPlaying] = useState(false)
   useEffect(() => {
     function navigate() {
       setShowDocs(window.location.hash === '#instructions')
+      setPlaying(false)
     }
     window.addEventListener('hashchange', navigate)
     return () => window.removeEventListener('hashchange', navigate)
@@ -80,9 +84,10 @@ function App() {
   const [execution, setExecution] = useState<ExecutionView>(() => ({
     machine: createInitialState(),
     lastEvent: null,
+    error: null,
   }))
 
-  const { machine, lastEvent } = execution
+  const { machine, lastEvent, error } = execution
   const activeLine = useRef<HTMLLIElement>(null)
   useEffect(() => {
     activeLine.current?.scrollIntoView({ block: 'nearest' })
@@ -96,22 +101,34 @@ function App() {
     || (lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction'))
   const readAddress = lastEvent?.kind === 'register-write' && (lastEvent.source === 'memory' || lastEvent.source === 'stack') ? lastEvent.address : null
   const writtenAddress = lastEvent?.kind === 'memory-write' ? lastEvent.address : null
-  const hasNextInstruction = errors.length === 0 && !machine.halted && machine.pc < program.length
+  const hasNextInstruction = errors.length === 0 && !error && !machine.halted && machine.pc < program.length
+  const isPlaying = playing && hasNextInstruction && programMode === 'debug' && !showDocs
   const stackAddresses = Array.from({ length: MEMORY_SIZE - machine.sp }, (_, offset) => machine.sp + offset)
 
   function step() {
     setExecution((previous) => {
-      if (errors.length || previous.machine.halted) return previous
+      if (errors.length || previous.error || previous.machine.halted) return previous
       const next = program[previous.machine.pc]
       if (!next) return previous
 
-      const result = executeInstruction(previous.machine, next.instruction, program.length)
-      return { machine: result.state, lastEvent: result.events[0] ?? null }
+      try {
+        const result = executeInstruction(previous.machine, next.instruction, program.length)
+        return { machine: result.state, lastEvent: result.events[0] ?? null, error: null }
+      } catch (cause) {
+        return { ...previous, error: cause instanceof Error ? cause.message : 'Execution failed.' }
+      }
     })
   }
 
+  useEffect(() => {
+    if (!isPlaying) return
+    const timer = window.setTimeout(step, PLAY_INTERVAL_MS)
+    return () => window.clearTimeout(timer)
+  })
+
   function reset() {
-    setExecution({ machine: createInitialState(), lastEvent: null })
+    setPlaying(false)
+    setExecution({ machine: createInitialState(), lastEvent: null, error: null })
   }
 
   function editSource(value: string) {
@@ -203,12 +220,13 @@ function App() {
                 ))}
               </ol>
               <div className="controls">
-                <button autoFocus type="button" onClick={step} disabled={!hasNextInstruction}>Step ▷</button>
+                <button autoFocus type="button" onClick={step} disabled={!hasNextInstruction || isPlaying}>Step ▷</button>
+                <button type="button" onClick={() => setPlaying(!isPlaying)} disabled={!hasNextInstruction}>{isPlaying ? 'Pause ❚❚' : 'Play ▶'}</button>
                 <button type="button" className="secondary" onClick={reset}>Reset</button>
-                <button type="button" className="secondary" onClick={() => setProgramMode('edit')}>Edit</button>
+                <button type="button" className="secondary" onClick={() => { setPlaying(false); setProgramMode('edit') }}>Edit</button>
               </div>
               <p className="execution-status" aria-live="polite">
-                {errors.length > 0 ? 'Fix the source errors before stepping.' : machine.halted
+                {error ? `Execution stopped: ${error}` : errors.length > 0 ? 'Fix the source errors before stepping.' : machine.halted
                   ? 'Machine halted.'
                   : hasNextInstruction ? `Next: line ${program[machine.pc].lineNumber} (PC ${machine.pc})` : program.length === 0 ? 'Enter an instruction to begin.' : 'Program complete.'}
               </p>
@@ -234,7 +252,7 @@ function App() {
               <span className={`zero-flag${wroteZeroFlag ? ` flag-write flag-${Number(machine.zf)}` : readZeroFlag ? ' signal-read' : ''}`}>
                 ZF <strong>{machine.zf ? '1' : '0'}</strong>{wroteZeroFlag && <span className="flag-role">↓ WRITE</span>}{readZeroFlag && <span className="flag-role">↑ READ</span>}
               </span>
-              <span className={machine.halted ? 'halted' : ''}>{programMode === 'edit' ? '● EDITING' : machine.halted ? '■ HALTED' : hasNextInstruction ? '● READY' : '■ COMPLETE'}</span>
+              <span className={machine.halted || error ? 'halted' : ''}>{programMode === 'edit' ? '● EDITING' : error ? '■ STOPPED' : machine.halted ? '■ HALTED' : isPlaying ? '▶ PLAYING' : hasNextInstruction ? '● READY' : '■ COMPLETE'}</span>
             </div>
             <p className="step-explanation" aria-live="polite" aria-atomic="true">
               {describeEvent(lastEvent)}
