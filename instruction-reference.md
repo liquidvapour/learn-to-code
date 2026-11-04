@@ -33,8 +33,8 @@ The Implemented column indicates availability through both the machine core and 
 | `JZ target` | Yes | Jump when `ZF` is set. | Preserved |
 | `PUSH source` | Yes | Decrement `SP`, then copy the register into memory at `SP`. | Preserved |
 | `POP destination` | Yes | Copy the top stack byte into a register and remove it from the stack. | Preserved |
-| `CALL target` | No | Push a return address and jump. | Undecided |
-| `RET` | No | Pop a return address and jump back. | Undecided |
+| `CALL target` | No | Push a return address and jump. | Preserved |
+| `RET` | No | Pop a return address and jump back. | Preserved |
 | `HALT` | Yes | Advance `PC` and set the halted state. | Preserved |
 
 ## Instruction details
@@ -162,19 +162,17 @@ POP R1
 
 `CALL 20`: Save the next instruction address on the stack, then jump to `20`.
 
-Open decisions and remaining work: Define return-address width and encoding, valid targets, program limits, and overflow behaviour without partial writes.
+Planned: validate the target like `JMP`, save `PC + 1` in seven little-endian stack bytes, and jump. Fewer than seven free bytes cause an atomic stack-overflow fault. A call at the final instruction may return to program end. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
 
 ### RET
 
 `RET`: Restore a saved instruction address from the stack into `PC`.
 
-Open decisions and remaining work: Define matching decoding, underflow and invalid-return faults, and stack changes.
+Planned: decode seven bytes at `SP`, validate the return address from `0` through program length inclusive, then advance `SP` by seven and jump. Too few bytes or an invalid address causes an atomic fault; bytes remain in memory. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
 
 ### HALT
 
 `HALT` takes no operands, advances `PC`, and sets `halted` to true. Registers, memory, `SP`, and `ZF` are preserved. The core rejects further execution while halted; the interface disables stepping until reset.
-
-Control-flow instructions will need explicit rules for replacing the normal `PC + 1` behaviour. A return address may exceed one byte if programs are not limited; its representation must be decided before implementing `CALL` and `RET`.
 
 ## Implementation map
 
