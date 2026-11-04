@@ -39,7 +39,10 @@ function describeEvent(event: MachineEvent | null) {
     return `${event.operation} to instruction ${event.target}: PC ${event.previousPc} → ${event.nextPc}`
   }
   if (event.kind === 'stack-branch') {
-    return `${event.operation}: PC ${event.previousPc} → ${event.nextPc}, return address ${event.returnAddress}`
+    const bytes = event.stackBytes.map(({ address, value }) => `${hex(address)} = ${hex(value)}`).join(', ')
+    return event.operation === 'CALL'
+      ? `CALL: save return address ${event.returnAddress} to stack (${bytes}); PC ${event.previousPc} → ${event.nextPc}`
+      : `RET: read return address ${event.returnAddress} from stack (${bytes}); PC ${event.previousPc} → ${event.nextPc}`
   }
   if (event.kind === 'comparison') {
     return `${event.register} (${event.value}) ${event.equal ? '=' : '≠'} ${event.sourceRegister} (${event.sourceValue}) → ZF = ${Number(event.equal)}`
@@ -99,8 +102,10 @@ function App() {
   const readZeroFlag = lastEvent?.kind === 'branch' && lastEvent.operation === 'JZ'
   const wroteZeroFlag = lastEvent?.kind === 'comparison'
     || (lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction'))
-  const readAddress = lastEvent?.kind === 'register-write' && (lastEvent.source === 'memory' || lastEvent.source === 'stack') ? lastEvent.address : null
-  const writtenAddress = lastEvent?.kind === 'memory-write' ? lastEvent.address : null
+  const readAddresses = lastEvent?.kind === 'stack-branch' && lastEvent.operation === 'RET' ? lastEvent.stackBytes.map((byte) => byte.address)
+    : lastEvent?.kind === 'register-write' && (lastEvent.source === 'memory' || lastEvent.source === 'stack') ? [lastEvent.address] : []
+  const writtenAddresses = lastEvent?.kind === 'stack-branch' && lastEvent.operation === 'CALL' ? lastEvent.stackBytes.map((byte) => byte.address)
+    : lastEvent?.kind === 'memory-write' ? [lastEvent.address] : []
   const hasNextInstruction = errors.length === 0 && !error && !machine.halted && machine.pc < program.length
   const isPlaying = playing && hasNextInstruction && programMode === 'debug' && !showDocs
   const stackAddresses = Array.from({ length: MEMORY_SIZE - machine.sp }, (_, offset) => machine.sp + offset)
@@ -185,8 +190,8 @@ function App() {
                 />
               </div>
               <p className="syntax-help" id="syntax-help">
-                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>JMP 0</code> · <code>JZ 0</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>POP R1</code> · <code>HALT</code>.
-                {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. JMP/JZ targets: decimal instruction indices starting at 0. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
+                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>JMP 0</code> · <code>JZ 0</code> · <code>CALL 0</code> · <code>RET</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>POP R1</code> · <code>HALT</code>.
+                {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. JMP/JZ/CALL targets: decimal instruction indices starting at 0. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
                 {' '}<a href="#instructions">Full instruction reference</a>.
               </p>
               <div id="program-errors" className="program-errors" aria-live="polite">
@@ -318,9 +323,9 @@ function App() {
                         return (
                           <td
                             key={offset}
-                            className={`${isStack ? 'stack-used' : ''}${isTop ? ' stack-top' : ''}${address === readAddress ? ' signal-read' : ''}${address === writtenAddress ? ' signal-write' : ''}`}
-                            title={`${hex(address)} · decimal ${value}${address === writtenAddress ? ' · last write' : address === readAddress ? ' · last read' : ''}`}
-                            aria-label={`${hex(address)}: ${hex(value)}${address === writtenAddress ? ', last write' : address === readAddress ? ', last read' : ''}${isTop ? ', SP, top of stack' : isStack ? ', occupied stack' : ''}`}
+                            className={`${isStack ? 'stack-used' : ''}${isTop ? ' stack-top' : ''}${readAddresses.includes(address) ? ' signal-read' : ''}${writtenAddresses.includes(address) ? ' signal-write' : ''}`}
+                            title={`${hex(address)} · decimal ${value}${writtenAddresses.includes(address) ? ' · last write' : readAddresses.includes(address) ? ' · last read' : ''}`}
+                            aria-label={`${hex(address)}: ${hex(value)}${writtenAddresses.includes(address) ? ', last write' : readAddresses.includes(address) ? ', last read' : ''}${isTop ? ', SP, top of stack' : isStack ? ', occupied stack' : ''}`}
                           >
                             {value.toString(16).toUpperCase().padStart(2, '0')}
                             {isTop && <span className="stack-top-label">SP</span>}

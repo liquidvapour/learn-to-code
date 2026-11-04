@@ -1,0 +1,10 @@
+; A subroutine calls another subroutine. R0 ends at 2 and SP at 256.
+MOV R0, 1
+CALL 3
+HALT
+; PC 3: outer subroutine
+CALL 5
+RET
+; PC 5: inner subroutine
+ADD R0, R0
+RET

@@ -48,3 +48,19 @@ test('Fibonacci example calls and returns for each generated number', () => {
   assert.equal(state.memory[0], 55)
   assert.equal(state.sp, 256)
 })
+
+test('nested-call example returns through both subroutines', () => {
+  const source = readFileSync(new URL('../progs/nested-call.txt', import.meta.url), 'utf8')
+  const { program, errors } = parseProgram(source)
+  assert.deepEqual(errors, [])
+  let state = createInitialState()
+  const path = []
+  for (let steps = 0; steps < 20 && !state.halted; steps++) {
+    path.push(state.pc)
+    state = executeInstruction(state, program[state.pc].instruction, program.length).state
+  }
+  assert.deepEqual(path, [0, 1, 3, 5, 6, 4, 2])
+  assert.equal(state.halted, true)
+  assert.equal(state.registers.R0, 2)
+  assert.equal(state.sp, 256)
+})

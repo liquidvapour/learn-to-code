@@ -102,14 +102,16 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
     - Run tests and the production build before staging.
   - [x] Add parsing, stack/memory read feedback, syntax help, and reference examples; run tests and the production build. Browser verification remains pending.
 - [x] Limit programs to 65,535 instructions and store CALL return addresses in two little-endian bytes; validate the limit in parsing and control-flow execution.
-- [ ] **`CALL` and `RET`:** use the stack for return addresses and show calls and returns in the program view.
+- [x] **`CALL` and `RET`:** use the stack for return addresses and show calls and returns in the program view.
   - [x] Define address representation, target and return validation, stack faults, and feedback in the technical design and instruction reference.
   - [x] Add core CALL and RET execution and tests for encoding, nesting, boundaries, validation, and atomic faults. Tests and production build pass.
   - [x] Parse CALL targets and RET; validate targets against the whole program and run the Fibonacci example. Tests and production build pass.
-  - [ ] Add interface feedback, documentation, and an executable nested-call example.
-    - Show stack-byte reads and writes and explain calls and returns.
-    - Update editor help and references; run tests and build.
+  - [x] Add interface feedback, documentation, and an executable nested-call example. Tests and production build pass; browser verification remains pending.
+    - [x] Show stack-byte reads and writes and explain calls and returns.
+    - [x] Update editor help and references; run tests and build.
 - [ ] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation.
+  - [ ] Add STORE/LOAD transfer badges using event source and destination positions, keeping existing highlights and immediate updates.
+  - [ ] Handle reduced motion, offscreen endpoints, and cancellation on subsequent actions; verify behavior and run checks.
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
 - [ ] **Continuous execution:**
   - [x] Add Play/Pause next to Step at a fixed pace, stopping on completion, faults, reset, editing, or navigation; preserve step feedback. Tests and production build pass; browser verification remains pending.

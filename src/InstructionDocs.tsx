@@ -13,7 +13,7 @@ export default function InstructionDocs() {
         <p>The machine starts with four zeroed registers, 256 zeroed memory bytes, PC = 0, SP = 256, and ZF = 0.</p>
         <dl>
           <dt>PC — program counter</dt>
-          <dd>The zero-based index of the next instruction, excluding blank and comment-only lines. JMP replaces PC with its target; JZ does so when ZF is 1 and otherwise advances by one. Other supported instructions advance PC by one, including HALT. Debug shows source lines labelled Line and instruction addresses labelled PC.</dd>
+          <dd>The zero-based index of the next instruction, excluding blank and comment-only lines. JMP replaces PC with its target; JZ does so when ZF is 1 and otherwise advances by one. CALL jumps after saving the next address; RET restores a saved address. Other supported instructions advance PC by one, including HALT. Debug shows source lines labelled Line and instruction addresses labelled PC.</dd>
           <dt>SP — stack pointer</dt>
           <dd>The address of the top stack byte. An empty stack has SP = 256, just beyond memory. PUSH grows the stack toward lower addresses.</dd>
           <dt>ZF — zero flag</dt>
@@ -67,6 +67,12 @@ export default function InstructionDocs() {
           <pre><code>{'MOV R0, 3\nMOV R1, 1\nSUB R0, R1\nJZ 5\nJMP 2\nHALT'}</code></pre>
           <p>R0 counts down through 2, 1, and 0. SUB sets ZF when R0 reaches zero, so JZ jumps to HALT at address 5. Otherwise JMP returns to SUB at address 2. The explanation reports whether JZ was taken and ZF is marked READ.</p>
           <p>JZ also works after CMP: load the value to compare into another register, then use <code>CMP R0, R2</code>. CMP sets ZF when those registers are equal. An untaken final JZ completes the program without setting the halted state.</p>
+        </section>
+        <section>
+          <h3>CALL and RET — call a subroutine</h3>
+          <p><code>CALL target</code> saves the next instruction address as two little-endian bytes on the stack and jumps to an existing instruction. <code>RET</code> reads those bytes, removes them from the stack, and returns to the saved address. Both preserve registers and ZF. RET leaves the bytes in memory.</p>
+          <pre><code>{'MOV R0, 1\nCALL 3\nHALT\nCALL 5\nRET\nADD R0, R0\nRET'}</code></pre>
+          <p>The call at PC 1 enters PC 3, which calls PC 5. The inner return goes to PC 4; the outer return goes to HALT at PC 2. R0 ends at 2 and SP returns to 256. CALL highlights both stack bytes written; RET highlights both bytes read. Insufficient stack space or bytes, and invalid return addresses, stop execution without changing state.</p>
         </section>
         <section>
           <h3>STORE — write a register to memory</h3>

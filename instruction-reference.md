@@ -33,8 +33,8 @@ The Implemented column indicates availability through both the machine core and 
 | `JZ target` | Yes | Jump when `ZF` is set. | Preserved |
 | `PUSH source` | Yes | Decrement `SP`, then copy the register into memory at `SP`. | Preserved |
 | `POP destination` | Yes | Copy the top stack byte into a register and remove it from the stack. | Preserved |
-| `CALL target` | No | Push a return address and jump. | Preserved |
-| `RET` | No | Pop a return address and jump back. | Preserved |
+| `CALL target` | Yes | Push a return address and jump. | Preserved |
+| `RET` | Yes | Pop a return address and jump back. | Preserved |
 | `HALT` | Yes | Advance `PC` and set the halted state. | Preserved |
 
 ## Instruction details
@@ -162,13 +162,13 @@ POP R1
 
 `CALL 20`: Save the next instruction address on the stack, then jump to `20`.
 
-Planned: validate the target like `JMP`, save `PC + 1` in two little-endian stack bytes, and jump. Fewer than two free bytes cause an atomic stack-overflow fault. A call at the final instruction may return to program end. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
+Validate the target like `JMP`, save `PC + 1` in two little-endian stack bytes, and jump. Both written memory cells are highlighted. Fewer than two free bytes cause an atomic stack-overflow fault. A call at the final instruction may return to program end. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
 
 ### RET
 
 `RET`: Restore a saved instruction address from the stack into `PC`.
 
-Planned: decode two bytes at `SP`, validate the return address from `0` through program length inclusive, then advance `SP` by two and jump. Too few bytes or an invalid address causes an atomic fault; bytes remain in memory. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
+Decode two bytes at `SP`, validate the return address from `0` through program length inclusive, then advance `SP` by two and jump. Both read memory cells are highlighted. Too few bytes or an invalid address causes an atomic fault; bytes remain in memory. See the [CALL and RET contract](technical-design.md#stack-contract-call-and-ret).
 
 ### HALT
 
