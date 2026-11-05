@@ -117,6 +117,17 @@ Source line 5 has instruction address `2`, and source line 6 has address `3`. Wi
 
 Implementation checks should cover first/last targets, forward/backward/self-jumps, targets above 255 in longer programs, invalid numeric targets and missing context, both `JZ` outcomes, untaken invalid targets, last-instruction fall-through, state preservation, source-line mapping, and whole-program rejection.
 
+## Memory contract: register-indirect LOAD and STORE
+
+This extension is planned and does not change the currently supported direct-address forms.
+
+- **Syntax and validation:** Accept `LOAD destination, addressRegister` and `STORE source, addressRegister`, using the existing case-insensitive register names, whitespace, comma, and comment rules. The second operand is either one register or an unsigned decimal integer from 0 to 255, with no brackets or offsets. Reject malformed operands during whole-program validation. The core validates both register operands and direct addresses before producing a result; invalid operands and halted execution leave the input state unchanged.
+- **Operation:** Resolve an indirect address from the address register's value before any write. Register values are bytes, so every resolved address is in 0–255, including stack bytes. LOAD reads memory at that address into its destination; STORE copies its source byte there. Both advance PC by one and preserve SP, ZF, and halted status. LOAD preserves memory and other registers; STORE preserves all registers and copies memory before writing.
+- **Same register:** `LOAD R0, R0` reads memory at the original value of R0 before replacing R0. `STORE R0, R0` writes the original value of R0 to the address given by that same value. No operand is re-read after a write.
+- **Events and feedback:** Keep the existing register-write and memory-write events and their resolved address, previous value, and transferred value. For indirect access, also identify the address register in the event; direct access has no address register. Show the address register as read, memory as read for LOAD or written for STORE, and the data register as written for LOAD or read for STORE. When LOAD uses one register for both roles, show both read and write cues together; when STORE uses one register for both reads, show one read cue. Explain the address register and resolved address using the pre-instruction value. Preserve the existing transfer motion between the data register and resolved memory cell, and clear cues and motion under the existing lifecycle rules.
+
+Implementation checks should cover direct-form compatibility, address endpoints, distinct and identical registers, pre-write address resolution, preserved state and immutable snapshots, invalid operands and halted execution, event contents, parser errors and comments, and interface cues and explanations.
+
 ## Stack contract: POP
 
 `POP` is planned; this contract guides its implementation.

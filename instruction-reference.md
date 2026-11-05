@@ -66,6 +66,10 @@ STORE R2, 0 ; Address zero
 
 Memory address `0` holds decimal `65`, displayed as hex `41` and ASCII `A`. Addresses must be integers from `0` to `255`. Any byte can be written, including occupied stack bytes. Registers, `SP`, and `ZF` are preserved.
 
+#### Planned register-indirect addressing
+
+`LOAD R0, R1` and `STORE R0, R1` will use the byte in R1 as the memory address; these forms are not implemented yet. With `LOAD R0, R0`, the original R0 selects the address before R0 is replaced. With `STORE R0, R0`, the original R0 supplies both address and value. See the [contract](technical-design.md#memory-contract-register-indirect-load-and-store) for validation and feedback.
+
 ### ADD
 
 ```text

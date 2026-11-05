@@ -103,6 +103,12 @@ This is enough to teach variables, arithmetic, conditions, loops, stack behaviou
 
 Multiplication, division, strings, floating point, objects, and other features should not be included initially unless they are needed for a specific lesson.
 
+### Planned register-indirect memory access
+
+Allow `LOAD R0, R1` and `STORE R0, R1` to use the address held in `R1`, alongside the existing decimal-address forms. This lets programs walk through memory by changing a register. The second operand supplies the address as either a number or a register value; register addresses are not implemented yet.
+
+Show the address register as read, the resolved memory cell as read or written, and the data register as written or read respectively. Explain the resolved address and retain the existing transfer animation. When the same register has both roles, show both applicable cues and explain that its original value supplies the address. Details and validation are in the [technical contract](technical-design.md#memory-contract-register-indirect-load-and-store).
+
 ### Planned ordering comparisons
 
 A future less-than flag and conditional branch should let programs compare unsigned byte values and act on their ordering. This would make examples such as sorting easier to follow and faster than counting two values down to zero. The precise flag name, which instructions update it, how it interacts with the zero flag, and branch syntax remain design decisions. The flag and branch are not implemented yet.

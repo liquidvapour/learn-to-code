@@ -126,10 +126,9 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
     - Show the queue in the output panel and add register-read feedback, including byte rendering, scrolling, and lifecycle behaviour; add a runnable example and update references.
     - Run tests and the production build; verify the panel and scrolling in a browser when available.
 - [ ] **Register-indirect `LOAD` and `STORE`:** allow a register to supply the memory address, alongside existing direct addresses.
-  - [ ] Define operand and event behaviour, including when the address and data registers are the same.
-    - Specify source syntax and validation for direct and register-supplied addresses.
-    - Specify read/write events and interface feedback when address and data registers coincide.
-  - [ ] Add core execution, parsing, interface feedback, examples, and reference updates; run checks.
+  - [x] Define operand and event behaviour, including when the address and data registers are the same; see the [contract](technical-design.md#memory-contract-register-indirect-load-and-store).
+  - [ ] Add core indirect execution and events, with tests for operands, address resolution, state preservation, and faults; run checks.
+  - [ ] Add parsing, interface feedback, examples, and reference updates; run checks.
 - [ ] **Less-than flag:** design and add an unsigned ordering flag and a way to branch on it; see [planned ordering comparisons](tiny-machine-design.md#planned-ordering-comparisons).
   - [ ] Define which instructions update or preserve the flag, its initial value, comparison semantics, and branch behaviour.
   - [ ] Implement the agreed core behaviour, source syntax, interface feedback, and examples in reviewable steps.
