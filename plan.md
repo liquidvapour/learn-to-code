@@ -112,11 +112,11 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation. Browser verification remains pending.
   - [x] Add STORE/LOAD transfer badges using event source and destination positions, keeping existing highlights and immediate updates.
   - [x] Handle reduced motion, offscreen endpoints, and cancellation on subsequent actions; run checks.
-- [ ] **`OUT`:** add a byte output stream and [output panel](tiny-machine-design.md#planned-byte-output).
+- [ ] **`OUT`:** add a byte output FIFO and [output panel](tiny-machine-design.md#planned-byte-output).
   - [x] Define the [output stream contract and execution event](technical-design.md#output-contract-out) before implementation.
   - [ ] Add `OUT register` execution and parsing, output feedback and a runnable example; update references and run checks.
-    - Add immutable output state and an output event, with core and parser coverage for ordering, preservation, and invalid operands.
-    - Show the output panel and register-read feedback, including byte rendering, scrolling, and lifecycle behaviour; add a runnable example and update references.
+    - Add an immutable 64-byte queue, FIFO consumption, and an output event, with core and parser coverage for capacity, ordering, preservation, and invalid operands.
+    - Automatically consume the queue into an output history; show the panel and register-read feedback, including byte rendering, scrolling, and lifecycle behaviour; add a runnable example and update references.
     - Run tests and the production build; verify the panel and scrolling in a browser when available.
 - [ ] **Register-indirect `LOAD` and `STORE`:** allow a register to supply the memory address, alongside existing direct addresses.
   - [ ] Define operand and event behaviour, including when the address and data registers are the same.
@@ -133,6 +133,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 ## Later milestones
 
 - Consider hexadecimal numeric literals consistently across instruction operands.
+- Explore machine-controlled device configuration and placing output and programs in machine memory.
 - Add short exercises and example programs that teach variables, control flow, and functions.
 - Explore a more controlled instruction editor if learners need it after trying the text editor.
 - Explore reverse stepping and a gradually more debugger-like interface.

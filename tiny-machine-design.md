@@ -35,6 +35,14 @@ The machine should be intentionally simpler than a real CPU. It is a teaching mo
 
 Every feature should earn its place.
 
+### Welcoming defaults, deeper control
+
+Choose defaults that make common programs satisfying to write and run without setup. The machine should behave predictably and explain what it is doing, so convenience helps learners get started without hiding the underlying model.
+
+As learners become curious about the machinery, give them ways to change those defaults and explore the consequences. Where it supports the lesson, machine instructions may eventually configure devices or other behaviour from a program. Add such controls when they teach something useful, rather than requiring beginners to configure everything up front; their exact form is future design work.
+
+For example, the planned output device consumes bytes automatically by default. A later configuration could let a program explore delayed consumption and a full queue. The default remains useful on its own, while the underlying FIFO gives deeper experiments something concrete to reveal.
+
 ### Deterministic core
 
 The virtual machine should be small, explicit, and deterministic.
@@ -101,11 +109,13 @@ The core machine should support a minimal input and output stream.
 
 ### Planned byte output
 
-`OUT register` will append the register's byte to an initially empty output stream, advance `PC`, and preserve registers, memory, `SP`, `ZF`, and halted status. Output is an ordered sequence of raw bytes, separate from memory, with no machine-imposed length limit. Each execution appends even when the byte repeats. Earlier machine-state snapshots retain their own output. Invalid registers and attempts to execute while halted leave state unchanged. An output event identifies the source register and emitted byte.
+`OUT register` will append the register's byte to an initially empty 64-byte FIFO output queue, advance `PC`, and preserve registers, memory, `SP`, `ZF`, and halted status. The queue holds raw bytes separately from memory. Each execution appends even when the byte repeats; a full queue causes a fault without changing state. Earlier machine-state snapshots retain their own queue. Invalid registers and attempts to execute while halted also leave state unchanged. An output event identifies the source register and emitted byte.
+
+By default, the output device automatically consumes queued bytes in FIFO order after each instruction and adds them to a separate visible output history. This lets ordinary programs print without manual intervention or a 64-byte total output limit. The queue is still finite; the history is a presentation record, not machine memory. A future machine instruction may configure device behaviour, such as manual or delayed consumption, to explore a full queue. Its syntax and modes are not yet defined. A future memory map may place the queue and program in machine memory.
 
 The interface will show output in a dedicated, scrollable panel in emission order. Printable ASCII bytes (`0x20`–`0x7E`) appear as characters, byte `0x0A` starts a new line, and other bytes appear as visible uppercase `\xHH` hex escapes. Rendering does not change the underlying bytes or decode UTF-8. Before any output, the panel shows an empty state.
 
-When stepping, the source register is highlighted and the explanation identifies the emitted byte. The panel also updates during Play and follows new output unless the learner has scrolled back. Output remains visible on pause, halt, or fault; Reset, editing, and starting a new Debug session clear it.
+When stepping, the source register is highlighted and the explanation identifies the emitted byte. The panel shows the output history and updates during Play, following new output unless the learner has scrolled back. History and queued bytes remain visible on pause, halt, or fault; Reset, editing, and starting a new Debug session clear both.
 
 These behaviours are planned, not yet implemented. See the [execution contract](technical-design.md#output-contract-out) and the [implementation steps](plan.md#next-small-steps).
 

@@ -35,7 +35,7 @@ The Implemented column indicates availability through both the machine core and 
 | `POP destination` | Yes | Copy the top stack byte into a register and remove it from the stack. | Preserved |
 | `CALL target` | Yes | Push a return address and jump. | Preserved |
 | `RET` | Yes | Pop a return address and jump back. | Preserved |
-| `OUT source` | No | Append a register byte to the output stream. | Preserved |
+| `OUT source` | No | Append a register byte to the output FIFO. | Preserved |
 | `HALT` | Yes | Advance `PC` and set the halted state. | Preserved |
 
 ## Instruction details
@@ -177,7 +177,7 @@ Decode two bytes at `SP`, validate the return address from `0` through program l
 
 ### OUT (planned)
 
-`OUT R0` will append the byte in `R0` to an initially empty, ordered output stream and advance `PC`. It preserves registers, memory, `SP`, `ZF`, and halted status. An output event will identify the source register and byte. Invalid registers and halted execution will leave state unchanged. See the [output contract](technical-design.md#output-contract-out) and [planned panel](tiny-machine-design.md#planned-byte-output).
+`OUT R0` will append the byte in `R0` to an initially empty 64-byte FIFO and advance `PC`. It preserves registers, memory, `SP`, `ZF`, and halted status. A full queue, invalid register, or halted execution leaves state unchanged. An output event will identify the source register and byte. By default, the device consumes queued bytes after each successful instruction and adds them to a visible history. See the [output contract](technical-design.md#output-contract-out) and [planned panel](tiny-machine-design.md#planned-byte-output).
 
 ## Implementation map
 
