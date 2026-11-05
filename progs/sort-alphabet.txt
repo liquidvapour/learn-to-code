@@ -3,7 +3,7 @@
 ; Memory 0-15 holds the letters; address 16 holds the remaining passes.
 ; Direct memory addresses require each adjacent pair to be written out.
 ; Output shows the original order, then the sorted order on the next line.
-; This takes about 12,657 steps: over 100 minutes at the current Play pace.
+; This takes about 12,657 steps: over 100 minutes at the default Play pace.
 MOV R0, 72 ; H
 STORE R0, 0
 MOV R0, 67 ; C

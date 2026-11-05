@@ -14,7 +14,7 @@ import {
 import { parseProgram, SAMPLE_SOURCE } from './program'
 
 const BYTES_PER_ROW = 16
-const PLAY_INTERVAL_MS = 500
+const PLAY_DELAYS_MS = [500, 100, 20, 4]
 const memoryRows = Array.from({ length: MEMORY_SIZE / BYTES_PER_ROW }, (_, row) => row * BYTES_PER_ROW)
 
 type ExecutionView = {
@@ -79,6 +79,7 @@ function describeEvent(event: MachineEvent | null) {
 function App() {
   const [showDocs, setShowDocs] = useState(() => window.location.hash === '#instructions')
   const [playing, setPlaying] = useState(false)
+  const [playDelay, setPlayDelay] = useState(PLAY_DELAYS_MS[0])
   useEffect(() => {
     function navigate() {
       setShowDocs(window.location.hash === '#instructions')
@@ -190,7 +191,7 @@ function App() {
 
   useEffect(() => {
     if (!isPlaying) return
-    const timer = window.setTimeout(step, PLAY_INTERVAL_MS)
+    const timer = window.setTimeout(step, playDelay)
     return () => window.clearTimeout(timer)
   })
 
@@ -291,6 +292,11 @@ function App() {
               <div className="controls">
                 <button autoFocus type="button" onClick={step} disabled={!hasNextInstruction || isPlaying}>Step ▷</button>
                 <button type="button" onClick={() => setPlaying(!isPlaying)} disabled={!hasNextInstruction}>{isPlaying ? 'Pause ❚❚' : 'Play ▶'}</button>
+                <label className="speed-control">Speed
+                  <select value={playDelay} onChange={(event) => setPlayDelay(Number(event.target.value))}>
+                    {PLAY_DELAYS_MS.map((delay) => <option key={delay} value={delay}>{500 / delay}×</option>)}
+                  </select>
+                </label>
                 <button type="button" className="secondary" onClick={reset}>Reset</button>
                 <button type="button" className="secondary" onClick={() => { setPlaying(false); setProgramMode('edit') }}>Edit</button>
               </div>

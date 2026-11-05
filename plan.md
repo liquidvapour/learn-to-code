@@ -131,9 +131,12 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
   - [ ] Define and document how ordinary data and the stack share memory, including overlap and boundaries.
   - [ ] Review invalid-address, unsupported-instruction, and stack-fault messages; clarify stopped-state feedback and cover the resulting behavior.
-- [ ] **Continuous execution:**
+- [x] **Continuous execution:**
   - [x] Add Play/Pause next to Step at a fixed pace, stopping on completion, faults, reset, editing, or navigation; preserve step feedback. Tests and production build pass; browser verification remains pending.
-  - [ ] Add a speed control for continuous execution.
+  - [x] Add a speed control for continuous execution, with the original pace as the slowest setting. Tests and production build pass; browser verification remains pending.
+- [ ] **Less-than flag:** design and add an unsigned ordering flag and a way to branch on it; see [planned ordering comparisons](tiny-machine-design.md#planned-ordering-comparisons).
+  - [ ] Define which instructions update or preserve the flag, its initial value, comparison semantics, and branch behaviour.
+  - [ ] Implement the agreed core behaviour, source syntax, interface feedback, and examples in reviewable steps.
 - [ ] **Movement cues:** extend the persistent read/write highlights with transfer motion between panels and explicit flag/stack-pointer change cues; retain reduced-motion support.
 - [ ] **Byte inspector:** let a learner select a memory byte and see its address, hex, unsigned decimal, binary, and ASCII interpretations.
 

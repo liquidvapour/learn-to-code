@@ -103,6 +103,10 @@ This is enough to teach variables, arithmetic, conditions, loops, stack behaviou
 
 Multiplication, division, strings, floating point, objects, and other features should not be included initially unless they are needed for a specific lesson.
 
+### Planned ordering comparisons
+
+A future less-than flag and conditional branch should let programs compare unsigned byte values and act on their ordering. This would make examples such as sorting easier to follow and faster than counting two values down to zero. The precise flag name, which instructions update it, how it interacts with the zero flag, and branch syntax remain design decisions. The flag and branch are not implemented yet.
+
 ## Input and output
 
 The core machine should support a minimal input and output stream.
