@@ -46,6 +46,7 @@ function asciiCharacter(value: number) {
 function describeEvent(event: MachineEvent | null) {
   if (event === null) return 'Press Step or Play to execute the highlighted instruction.'
   if (event.kind === 'halt') return 'HALT stopped execution. Reset to run again.'
+  if (event.kind === 'output') return `${event.sourceRegister} → output: ${event.value}`
   if (event.kind === 'branch') {
     if (event.operation === 'JZ') {
       return `JZ ${event.target}: ZF = ${Number(event.taken)}, ${event.taken ? 'jump taken' : 'not taken; continue'} — PC ${event.previousPc} → ${event.nextPc}`

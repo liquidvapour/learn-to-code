@@ -623,3 +623,37 @@ test('CALL and RET reject invalid context, addresses and stack capacity atomical
     assert.throws(() => executeInstruction({ ...initial, halted: true }, instruction, 1), /halted/)
   }
 })
+
+test('OUT appends bytes in order, retaining only the latest 64 without mutating snapshots', () => {
+  let state = createInitialState()
+  assert.deepEqual(state.output, [])
+  const initial = state
+  for (let value = 0; value < 65; value++) {
+    state = executeInstruction(state, { operation: 'MOV', register: 'R0', value }).state
+    const before = state
+    const result = executeInstruction(before, { operation: 'OUT', register: 'R0' })
+    assert.deepEqual(result.events, [{ kind: 'output', sourceRegister: 'R0', value }])
+    assert.equal(result.state.pc, before.pc + 1)
+    assert.strictEqual(result.state.registers, before.registers)
+    assert.strictEqual(result.state.memory, before.memory)
+    assert.equal(result.state.sp, before.sp)
+    assert.equal(result.state.zf, before.zf)
+    assert.equal(result.state.halted, before.halted)
+    assert.equal(before.output.length, Math.min(value, 64))
+    state = result.state
+  }
+  assert.deepEqual(initial.output, [])
+  assert.deepEqual(state.output, Array.from({ length: 64 }, (_, i) => i + 1))
+  const repeated = executeInstruction(state, { operation: 'OUT', register: 'R0' }).state
+  assert.deepEqual(repeated.output.slice(-2), [64, 64])
+  assert.equal(state.output[0], 1)
+})
+
+test('OUT rejects invalid registers and halted execution without changing state', () => {
+  const state = createInitialState()
+  assert.throws(() => executeInstruction(state, { operation: 'OUT', register: 'R4' }), /Unknown register/)
+  assert.deepEqual(state.output, [])
+  const halted = executeInstruction(state, { operation: 'HALT' }).state
+  assert.throws(() => executeInstruction(halted, { operation: 'OUT', register: 'R0' }), /halted/)
+  assert.deepEqual(halted.output, [])
+})

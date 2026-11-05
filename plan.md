@@ -114,8 +114,9 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
   - [x] Handle reduced motion, offscreen endpoints, and cancellation on subsequent actions; run checks.
 - [ ] **`OUT`:** add a byte output FIFO and [output panel](tiny-machine-design.md#planned-byte-output).
   - [x] Define the [output stream contract and execution event](technical-design.md#output-contract-out) before implementation.
-  - [ ] Add `OUT register` execution and parsing, output feedback and a runnable example; update references and run checks.
-    - Add an immutable 64-byte queue that discards its oldest byte at capacity and an output event, with core and parser coverage for ordering, preservation, and invalid operands.
+  - [x] Add core `OUT` execution with an immutable 64-byte queue and output event; test ordering, state preservation, and invalid operands.
+  - [ ] Add `OUT register` parsing, output feedback and a runnable example; update references and run checks.
+    - Add parser coverage for valid and invalid operands.
     - Show the queue in the output panel and add register-read feedback, including byte rendering, scrolling, and lifecycle behaviour; add a runnable example and update references.
     - Run tests and the production build; verify the panel and scrolling in a browser when available.
 - [ ] **Register-indirect `LOAD` and `STORE`:** allow a register to supply the memory address, alongside existing direct addresses.

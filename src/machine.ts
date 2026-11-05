@@ -1,5 +1,6 @@
 export const REGISTER_NAMES = ['R0', 'R1', 'R2', 'R3'] as const
 export const MEMORY_SIZE = 256
+export const OUTPUT_CAPACITY = 64
 export const MAX_PROGRAM_LENGTH = 0xffff
 const MAX_BYTE = 0xff
 
@@ -17,6 +18,7 @@ const InstrictionSTORE = 'STORE'
 const InstrictionLOAD = 'LOAD'
 const InstrictionPUSH = 'PUSH'
 const InstrictionPOP = 'POP'
+const InstrictionOUT = 'OUT'
 const InstrictionHALT = 'HALT'
 
 export type MOVInstruction =  Readonly<{
@@ -79,6 +81,8 @@ export type POPInstruction = Readonly<{
   register: Register
 }>
 
+export type OUTInstruction = Readonly<{ operation: 'OUT'; register: Register }>
+
 export type HALTInstruction = Readonly<{
   operation: 'HALT'
 }>
@@ -98,11 +102,13 @@ export type Instruction =
   | LOADInstruction 
   | PUSHInstruction 
   | POPInstruction
+  | OUTInstruction
   | HALTInstruction
 
 export type MachineState = Readonly<{
   registers: Readonly<Record<Register, number>>
   memory: Uint8Array
+  output: readonly number[]
   pc: number
   sp: number
   zf: boolean
@@ -155,6 +161,10 @@ export type MachineEvent = Readonly<({
   returnAddress: number
   stackBytes: readonly Readonly<{ address: number; value: number }>[]
 }> | Readonly<{
+  kind: 'output'
+  sourceRegister: Register
+  value: number
+}> | Readonly<{
   kind: 'halt'
 }>
 
@@ -199,6 +209,7 @@ export function createInitialState(): MachineState {
   return {
     registers: { R0: 0, R1: 0, R2: 0, R3: 0 },
     memory: new Uint8Array(MEMORY_SIZE),
+    output: [],
     pc: 0,
     sp: MEMORY_SIZE,
     zf: false,
@@ -320,6 +331,12 @@ function pop(state: MachineState, instruction: POPInstruction) {
     { source: 'stack', address: state.sp }, { sp: state.sp + 1 })
 }
 
+function output(state: MachineState, instruction: OUTInstruction) {
+  const value = readRegister(state, instruction.register)
+  const output = [...state.output.slice(-(OUTPUT_CAPACITY - 1)), value]
+  return completeStep(state, { output }, { kind: 'output', sourceRegister: instruction.register, value })
+}
+
 function validateProgramLength(operation: string, programLength?: number): asserts programLength is number {
   if (programLength === undefined || !Number.isSafeInteger(programLength) || programLength < 0 || programLength > MAX_PROGRAM_LENGTH) {
     throw new RangeError(`${operation} requires a program length from 0 to 65535`)
@@ -423,6 +440,8 @@ export function executeInstruction(
       return push(state, instruction)
     case InstrictionPOP:
       return pop(state, instruction)
+    case InstrictionOUT:
+      return output(state, instruction)
     case InstrictionHALT:
       return halt(state)
     default:
