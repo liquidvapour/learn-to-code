@@ -6,7 +6,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Done
 
-- [x] Add an SOS beacon variant that writes three messages to output, with an execution test.
+- [x] Add an SOS beacon variant that writes three messages and dot separators to output, with an execution test.
 
 - [x] Add an example that reverses CAT in memory using the stack.
 

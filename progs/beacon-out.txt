@@ -1,5 +1,5 @@
 ; SOS beacon with output: copy this program into the editor and run it.
-; Memory 0-2 holds SOS; each of three flashes writes SOS and a newline.
+; Memory 0-2 holds SOS; each of three flashes writes SOS and ... on separate lines.
 ; Jump targets are zero-based instruction addresses, not source lines.
 MOV R0, 83     ; S
 STORE R0, 0
@@ -8,10 +8,11 @@ MOV R0, 79     ; O
 STORE R0, 1
 POP R0         ; Restore S from the stack
 STORE R0, 2
-MOV R0, 0      ; Flashes completed
-MOV R1, 1      ; Increment and decrement amount
+MOV R0, 46     ; '.'
+STORE R0, 4
+MOV R1, 1      ; Decrement amount
 MOV R2, 3      ; Flashes remaining
-; PC 10: output one flash
+; PC 11: output one flash
 LOAD R3, 0
 OUT R3         ; S
 LOAD R3, 1
@@ -20,13 +21,12 @@ LOAD R3, 2
 OUT R3         ; S
 MOV R3, 10
 OUT R3         ; Newline
-ADD R0, R1
-STORE R0, 3    ; Record the flash count
+OUT R0         ; .
+OUT R0         ; .
+OUT R0         ; .
+OUT R3         ; Newline
 SUB R2, R1
-MOV R3, 0
-CMP R2, R3     ; Are there any flashes left?
-JZ 25          ; Zero remaining: read back the count
-JMP 10         ; Flashes remain: repeat
-; PC 25: inspect the result
-LOAD R3, 3
+JZ 26          ; Zero remaining: stop
+JMP 11         ; Flashes remain: repeat
+; PC 26: stop
 HALT

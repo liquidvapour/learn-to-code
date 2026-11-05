@@ -27,7 +27,7 @@ test('SOS beacon executes every instruction and records three flashes', () => {
   assert.equal(state.sp, 256)
 })
 
-test('output SOS beacon emits three messages and records three flashes', () => {
+test('output SOS beacon emits three messages with dot separators', () => {
   const source = readFileSync(new URL('../progs/beacon-out.txt', import.meta.url), 'utf8')
   const { program, errors } = parseProgram(source)
   assert.deepEqual(errors, [])
@@ -36,10 +36,10 @@ test('output SOS beacon emits three messages and records three flashes', () => {
     state = executeInstruction(state, program[state.pc].instruction, program.length).state
   }
   assert.equal(state.halted, true)
-  assert.equal(String.fromCharCode(...state.output), 'SOS\nSOS\nSOS\n')
+  assert.equal(String.fromCharCode(...state.output), 'SOS\n...\nSOS\n...\nSOS\n...\n')
   assert.equal(String.fromCharCode(...state.memory.slice(0, 3)), 'SOS')
-  assert.equal(state.memory[3], 3)
-  assert.equal(state.registers.R3, 3)
+  assert.equal(state.memory[3], 0)
+  assert.equal(state.registers.R3, 10)
   assert.equal(state.sp, 256)
 })
 
