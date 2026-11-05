@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import InstructionDocs from './InstructionDocs'
 import {
   createInitialState,
@@ -7,6 +7,7 @@ import {
   REGISTER_NAMES,
   type MachineEvent,
   type MachineState,
+  type Register,
 } from './machine'
 
 import { parseProgram, SAMPLE_SOURCE } from './program'
@@ -19,6 +20,19 @@ type ExecutionView = {
   machine: MachineState
   lastEvent: MachineEvent | null
   error: string | null
+  transfer: { operation: 'STORE' | 'LOAD'; register: Register; address: number; value: number } | null
+}
+
+function isVisible(element: Element) {
+  const rect = element.getBoundingClientRect()
+  if (!rect.width || !rect.height || rect.top < 0 || rect.left < 0 || rect.bottom > window.innerHeight || rect.right > window.innerWidth) return false
+  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+    const style = getComputedStyle(parent)
+    const bounds = parent.getBoundingClientRect()
+    if (style.overflowX !== 'visible' && (rect.left < bounds.left || rect.right > bounds.right)) return false
+    if (style.overflowY !== 'visible' && (rect.top < bounds.top || rect.bottom > bounds.bottom)) return false
+  }
+  return true
 }
 
 function hex(value: number, width = 2) {
@@ -88,9 +102,43 @@ function App() {
     machine: createInitialState(),
     lastEvent: null,
     error: null,
+    transfer: null,
   }))
 
   const { machine, lastEvent, error } = execution
+  const workspace = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const transfer = execution.transfer
+    if (!transfer || showDocs || programMode !== 'debug' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const register = workspace.current?.querySelector(`[data-register="${transfer.register}"]`)
+    const memory = workspace.current?.querySelector(`[data-address="${transfer.address}"]`)
+    if (!register || !memory || !isVisible(register) || !isVisible(memory)) return
+    const from = (transfer.operation === 'STORE' ? register : memory).getBoundingClientRect()
+    const to = (transfer.operation === 'STORE' ? memory : register).getBoundingClientRect()
+    const badge = document.createElement('span')
+    badge.className = 'transfer-badge'
+    badge.setAttribute('aria-hidden', 'true')
+    badge.textContent = hex(transfer.value)
+    badge.style.left = `${from.left + from.width / 2}px`
+    badge.style.top = `${from.top + from.height / 2}px`
+    document.body.appendChild(badge)
+    const animation = badge.animate([
+      { transform: 'translate(-50%, -50%)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${to.left + to.width / 2 - from.left - from.width / 2}px), calc(-50% + ${to.top + to.height / 2 - from.top - from.height / 2}px))`, opacity: 1 },
+    ], { duration: 400, easing: 'ease-in-out' })
+    const cancel = () => { animation.cancel(); badge.remove() }
+    animation.onfinish = () => badge.remove()
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    motion.addEventListener('change', cancel)
+    window.addEventListener('scroll', cancel, true)
+    window.addEventListener('resize', cancel)
+    return () => {
+      cancel()
+      motion.removeEventListener('change', cancel)
+      window.removeEventListener('scroll', cancel, true)
+      window.removeEventListener('resize', cancel)
+    }
+  }, [execution, showDocs, programMode])
   const activeLine = useRef<HTMLLIElement>(null)
   useEffect(() => {
     activeLine.current?.scrollIntoView({ block: 'nearest' })
@@ -118,9 +166,16 @@ function App() {
 
       try {
         const result = executeInstruction(previous.machine, next.instruction, program.length)
-        return { machine: result.state, lastEvent: result.events[0] ?? null, error: null }
+        const event = result.events[0] ?? null
+        const instruction = next.instruction
+        const transfer = instruction.operation === 'STORE' && event?.kind === 'memory-write'
+          ? { operation: instruction.operation, register: event.sourceRegister, address: event.address, value: event.value }
+          : instruction.operation === 'LOAD' && event?.kind === 'register-write' && event.source === 'memory'
+            ? { operation: instruction.operation, register: event.register, address: event.address, value: event.value }
+            : null
+        return { machine: result.state, lastEvent: event, error: null, transfer }
       } catch (cause) {
-        return { ...previous, error: cause instanceof Error ? cause.message : 'Execution failed.' }
+        return { ...previous, transfer: null, error: cause instanceof Error ? cause.message : 'Execution failed.' }
       }
     })
   }
@@ -133,7 +188,7 @@ function App() {
 
   function reset() {
     setPlaying(false)
-    setExecution({ machine: createInitialState(), lastEvent: null, error: null })
+    setExecution({ machine: createInitialState(), lastEvent: null, error: null, transfer: null })
   }
 
   function editSource(value: string) {
@@ -160,7 +215,7 @@ function App() {
       </header>
 
       {showDocs && <InstructionDocs />}
-      <div className="workspace" aria-label="Tiny Machine workspace" hidden={showDocs}>
+      <div ref={workspace} className="workspace" aria-label="Tiny Machine workspace" hidden={showDocs}>
         <section className="panel program-panel" aria-labelledby="program-title">
           <div className="module-heading"><h2 id="program-title"><span>01</span> Program</h2><span className="module-label">{programMode === 'edit' ? 'SOURCE / EDIT' : 'SEQUENCER / DEBUG'}</span></div>
           {programMode === 'edit' ? (
@@ -244,7 +299,7 @@ function App() {
             <div className="module-heading"><h2 id="machine-title"><span>02</span> Registers</h2><span className="module-label">UNSIGNED / 8 BIT</span></div>
             <dl className="register-list">
               {REGISTER_NAMES.map((register) => (
-                <div className={`register${readRegisters.includes(register) ? ' signal-read' : ''}${writtenRegister === register ? ' signal-write' : ''}`} key={`${register}-${machine.pc}`}>
+                <div data-register={register} className={`register${readRegisters.includes(register) ? ' signal-read' : ''}${writtenRegister === register ? ' signal-write' : ''}`} key={`${register}-${machine.pc}`}>
                   <dt>{register}</dt>
                   <dd>{machine.registers[register].toString().padStart(3, '0')}<small>{hex(machine.registers[register])}</small>
                     <meter min={0} max={255} value={machine.registers[register]} aria-label={`${register} byte value`} />
@@ -323,6 +378,7 @@ function App() {
                         return (
                           <td
                             key={offset}
+                            data-address={address}
                             className={`${isStack ? 'stack-used' : ''}${isTop ? ' stack-top' : ''}${readAddresses.includes(address) ? ' signal-read' : ''}${writtenAddresses.includes(address) ? ' signal-write' : ''}`}
                             title={`${hex(address)} · decimal ${value}${writtenAddresses.includes(address) ? ' · last write' : readAddresses.includes(address) ? ' · last read' : ''}`}
                             aria-label={`${hex(address)}: ${hex(value)}${writtenAddresses.includes(address) ? ', last write' : readAddresses.includes(address) ? ', last read' : ''}${isTop ? ', SP, top of stack' : isStack ? ', occupied stack' : ''}`}

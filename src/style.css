@@ -110,6 +110,7 @@ meter::-moz-meter-bar { background: var(--mint); }
 .register.signal-write { animation: write-pulse .45s ease-out; }
 .register.signal-read .register-role { color: var(--amber); }
 .register.signal-write .register-role { color: var(--mint); }
+.transfer-badge { position: fixed; z-index: 100; pointer-events: none; padding: 5px 7px; border: 1px solid var(--mint); border-radius: 3px; background: #152b24; color: var(--mint); box-shadow: 0 2px 10px #0008; font: 11px var(--mono); }
 .signal-legend { grid-column: 1 / -1; display: flex; align-items: center; gap: 20px; color: var(--muted); font: 9px var(--mono); letter-spacing: .04em; }
 .signal-legend span { display: flex; align-items: center; gap: 6px; }
 .signal-legend i { width: 7px; height: 7px; display: inline-block; }

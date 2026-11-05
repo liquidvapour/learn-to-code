@@ -109,10 +109,12 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
   - [x] Add interface feedback, documentation, and an executable nested-call example. Tests and production build pass; browser verification remains pending.
     - [x] Show stack-byte reads and writes and explain calls and returns.
     - [x] Update editor help and references; run tests and build.
-- [ ] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation.
-  - [ ] Add STORE/LOAD transfer badges using event source and destination positions, keeping existing highlights and immediate updates.
-  - [ ] Handle reduced motion, offscreen endpoints, and cancellation on subsequent actions; verify behavior and run checks.
+- [x] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation. Browser verification remains pending.
+  - [x] Add STORE/LOAD transfer badges using event source and destination positions, keeping existing highlights and immediate updates.
+  - [x] Handle reduced motion, offscreen endpoints, and cancellation on subsequent actions; run checks.
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
+  - [ ] Define and document how ordinary data and the stack share memory, including overlap and boundaries.
+  - [ ] Review invalid-address, unsupported-instruction, and stack-fault messages; clarify stopped-state feedback and cover the resulting behavior.
 - [ ] **Continuous execution:**
   - [x] Add Play/Pause next to Step at a fixed pace, stopping on completion, faults, reset, editing, or navigation; preserve step feedback. Tests and production build pass; browser verification remains pending.
   - [ ] Add a speed control for continuous execution.
