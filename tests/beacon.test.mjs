@@ -27,6 +27,22 @@ test('SOS beacon executes every instruction and records three flashes', () => {
   assert.equal(state.sp, 256)
 })
 
+test('output SOS beacon emits three messages and records three flashes', () => {
+  const source = readFileSync(new URL('../progs/beacon-out.txt', import.meta.url), 'utf8')
+  const { program, errors } = parseProgram(source)
+  assert.deepEqual(errors, [])
+  let state = createInitialState()
+  for (let steps = 0; steps < 100 && !state.halted; steps++) {
+    state = executeInstruction(state, program[state.pc].instruction, program.length).state
+  }
+  assert.equal(state.halted, true)
+  assert.equal(String.fromCharCode(...state.output), 'SOS\nSOS\nSOS\n')
+  assert.equal(String.fromCharCode(...state.memory.slice(0, 3)), 'SOS')
+  assert.equal(state.memory[3], 3)
+  assert.equal(state.registers.R3, 3)
+  assert.equal(state.sp, 256)
+})
+
 test('Fibonacci example calls and returns for each generated number', () => {
   const source = readFileSync(new URL('../progs/fibjmp.txt', import.meta.url), 'utf8')
   const { program, errors } = parseProgram(source)
