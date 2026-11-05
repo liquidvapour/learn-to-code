@@ -8,3 +8,4 @@
 - Do not stage unrelated edits. Preserve existing work and inspect the Git diff before staging.
 - When a task needs several steps, complete one reviewable step at a time and stop for the user to commit before continuing.
 - Keep `plan.md` current as steps are completed. Break down upcoming work before implementing it, and leave distant work broad.
+- Keep detailed product and interface design in `tiny-machine-design.md`, including clearly identified future functionality. Keep `plan.md` focused on reviewable steps and link to the design instead of repeating its details.

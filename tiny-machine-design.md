@@ -99,6 +99,16 @@ Multiplication, division, strings, floating point, objects, and other features s
 
 The core machine should support a minimal input and output stream.
 
+### Planned byte output
+
+`OUT register` will append the register's byte to an output stream, advance `PC`, and preserve the machine's other data and flags. An execution event will identify the emitted byte and its source register.
+
+The interface will show output in a dedicated, scrollable panel in emission order. Printable ASCII bytes appear as characters, byte 10 starts a new line, and other bytes appear as visible `\xHH` hex escapes. Before any output, the panel shows an empty state.
+
+When stepping, the source register is highlighted and the explanation identifies the emitted byte. The panel also updates during Play and follows new output unless the learner has scrolled back. Output remains visible on pause, halt, or fault; Reset, editing, and starting a new Debug session clear it.
+
+### Planned devices
+
 Additional hardware should be modular.
 
 A useful early module would be a small display, such as 32x32 pixels, exposed through memory-mapped I/O.
