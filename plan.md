@@ -6,6 +6,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Done
 
+- [x] Move the memory description and legend and the output description into their headings, and make output text more prominent while preserving the viewport layout; production build passes, browser verification remains pending.
+
 - [x] Add a runnable alphabet sorting example that prints memory before and after sorting.
 
 - [x] Add an SOS beacon variant that writes three messages and dot separators to output, with an execution test.

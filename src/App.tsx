@@ -364,8 +364,11 @@ function App() {
           </section>
 
           <section className="panel output-panel" aria-labelledby="output-title">
-            <div className="module-heading"><h2 id="output-title"><span>05</span> Output</h2><span className="module-label">{machine.output.length} / {OUTPUT_CAPACITY} BYTES</span></div>
-            <p className="panel-note">Oldest first · printable ASCII, newline, or \xHH for other bytes.</p>
+            <div className="module-heading output-heading">
+              <h2 id="output-title"><span>05</span> Output</h2>
+              <p className="panel-note">Oldest first · printable ASCII, newline, or \xHH for other bytes.</p>
+              <span className="module-label">{machine.output.length} / {OUTPUT_CAPACITY} BYTES</span>
+            </div>
             <div className="output-content" ref={outputView} tabIndex={0} role="region" aria-label="Output bytes" onScroll={(event) => {
               const element = event.currentTarget
               followOutput.current = element.scrollHeight - element.scrollTop - element.clientHeight <= 2
@@ -375,11 +378,14 @@ function App() {
           </section>
 
           <section className="panel memory-panel" aria-labelledby="memory-title">
-            <div className="module-heading"><h2 id="memory-title"><span>03</span> Memory</h2><span className="module-label">16 × 16 / HEX + ASCII</span></div>
-            <p className="panel-note">256 bytes · Data and stack share this memory.</p>
-            <div className="memory-legend">
-              <span><span className="legend-swatch stack-used" aria-hidden="true" /> Occupied stack</span>
-              <span><span className="legend-swatch stack-top" aria-hidden="true" /> SP: top of stack</span>
+            <div className="module-heading memory-heading">
+              <h2 id="memory-title"><span>03</span> Memory</h2>
+              <p className="panel-note">256 bytes · Data and stack share this memory.</p>
+              <div className="memory-legend">
+                <span><span className="legend-swatch stack-used" aria-hidden="true" /> Occupied stack</span>
+                <span><span className="legend-swatch stack-top" aria-hidden="true" /> SP: top of stack</span>
+              </div>
+              <span className="module-label">16 × 16 / HEX + ASCII</span>
             </div>
             <div className="memory-grid" role="region" aria-label="Memory hex grid" tabIndex={0}>
               <table>
