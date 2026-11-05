@@ -112,6 +112,14 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation. Browser verification remains pending.
   - [x] Add STORE/LOAD transfer badges using event source and destination positions, keeping existing highlights and immediate updates.
   - [x] Handle reduced motion, offscreen endpoints, and cancellation on subsequent actions; run checks.
+- [ ] **`OUT`:** add a byte output stream so programs can produce visible output.
+  - [ ] Define the output stream contract and execution event before implementation: `OUT register` appends the register's byte, preserves machine data and flags, and advances PC.
+  - [ ] Show output in a dedicated, scrollable panel in emission order. Render printable ASCII as characters, byte 10 as a line break, and other bytes as visible `\xHH` hex escapes so no output silently disappears; show an empty state before the first byte.
+  - [ ] Highlight the source register and explain the emitted byte when stepping; update the panel during Play, follow new output unless the learner has scrolled back, and retain output on pause, halt, or fault. Reset, editing, and starting a new Debug session clear it.
+  - [ ] Add `OUT register` execution and parsing, output feedback and a runnable example; update references and run checks.
+- [ ] **Register-indirect `LOAD` and `STORE`:** allow a register to supply the memory address, alongside existing direct addresses.
+  - [ ] Define operand and event behaviour, including when the address and data registers are the same.
+  - [ ] Add core execution, parsing, interface feedback, examples, and reference updates; run checks.
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
   - [ ] Define and document how ordinary data and the stack share memory, including overlap and boundaries.
   - [ ] Review invalid-address, unsupported-instruction, and stack-fault messages; clarify stopped-state feedback and cover the resulting behavior.
@@ -123,6 +131,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Later milestones
 
+- Consider hexadecimal numeric literals consistently across instruction operands.
 - Add short exercises and example programs that teach variables, control flow, and functions.
 - Explore a more controlled instruction editor if learners need it after trying the text editor.
 - Explore reverse stepping and a gradually more debugger-like interface.
