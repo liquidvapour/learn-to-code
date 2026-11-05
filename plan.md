@@ -113,8 +113,11 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
   - [x] Add STORE/LOAD transfer badges using event source and destination positions, keeping existing highlights and immediate updates.
   - [x] Handle reduced motion, offscreen endpoints, and cancellation on subsequent actions; run checks.
 - [ ] **`OUT`:** add a byte output stream and [output panel](tiny-machine-design.md#planned-byte-output).
-  - [ ] Define the output stream contract and execution event before implementation.
+  - [x] Define the [output stream contract and execution event](technical-design.md#output-contract-out) before implementation.
   - [ ] Add `OUT register` execution and parsing, output feedback and a runnable example; update references and run checks.
+    - Add immutable output state and an output event, with core and parser coverage for ordering, preservation, and invalid operands.
+    - Show the output panel and register-read feedback, including byte rendering, scrolling, and lifecycle behaviour; add a runnable example and update references.
+    - Run tests and the production build; verify the panel and scrolling in a browser when available.
 - [ ] **Register-indirect `LOAD` and `STORE`:** allow a register to supply the memory address, alongside existing direct addresses.
   - [ ] Define operand and event behaviour, including when the address and data registers are the same.
   - [ ] Add core execution, parsing, interface feedback, examples, and reference updates; run checks.

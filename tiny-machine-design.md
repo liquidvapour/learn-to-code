@@ -101,11 +101,13 @@ The core machine should support a minimal input and output stream.
 
 ### Planned byte output
 
-`OUT register` will append the register's byte to an output stream, advance `PC`, and preserve the machine's other data and flags. An execution event will identify the emitted byte and its source register.
+`OUT register` will append the register's byte to an initially empty output stream, advance `PC`, and preserve registers, memory, `SP`, `ZF`, and halted status. Output is an ordered sequence of raw bytes, separate from memory, with no machine-imposed length limit. Each execution appends even when the byte repeats. Earlier machine-state snapshots retain their own output. Invalid registers and attempts to execute while halted leave state unchanged. An output event identifies the source register and emitted byte.
 
-The interface will show output in a dedicated, scrollable panel in emission order. Printable ASCII bytes appear as characters, byte 10 starts a new line, and other bytes appear as visible `\xHH` hex escapes. Before any output, the panel shows an empty state.
+The interface will show output in a dedicated, scrollable panel in emission order. Printable ASCII bytes (`0x20`–`0x7E`) appear as characters, byte `0x0A` starts a new line, and other bytes appear as visible uppercase `\xHH` hex escapes. Rendering does not change the underlying bytes or decode UTF-8. Before any output, the panel shows an empty state.
 
 When stepping, the source register is highlighted and the explanation identifies the emitted byte. The panel also updates during Play and follows new output unless the learner has scrolled back. Output remains visible on pause, halt, or fault; Reset, editing, and starting a new Debug session clear it.
+
+These behaviours are planned, not yet implemented. See the [execution contract](technical-design.md#output-contract-out) and the [implementation steps](plan.md#next-small-steps).
 
 ### Planned devices
 

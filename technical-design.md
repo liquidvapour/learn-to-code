@@ -138,6 +138,17 @@ Implementation checks should cover first/last targets, forward/backward/self-jum
 
 Implementation checks should include nested calls, addresses above 255 and 16-bit boundaries, a final-instruction call returning to `N`, exact stack capacity boundaries, invalid and modified return bytes, missing context, preserved state, and atomic failure.
 
+## Output contract: OUT
+
+`OUT` is planned; this contract guides its implementation and complements the [output panel design](tiny-machine-design.md#planned-byte-output).
+
+- **State and operation:** Add an initially empty ordered sequence of raw bytes to machine state. `OUT source` reads one register, appends its byte, and advances `PC` by one. Repeated bytes produce separate entries. Output is separate from the 256-byte memory and has no machine-imposed length limit. Preserve registers, memory, `SP`, `ZF`, and halted status. Append without mutating an earlier state's output.
+- **Validation:** Source accepts exactly one register using the existing case, whitespace, and comment rules. Reject invalid operands during whole-program validation. The core validates the register and rejects execution while halted before producing a result; either failure leaves the input state and output unchanged.
+- **Event and feedback:** Emit one `output` event containing `sourceRegister` and the emitted byte as `value`. The interface marks the register as read, explains the byte, and updates the output panel even for repeated values. Clear the read cue on the next step or reset; retain output on pause, halt, normal completion, and faults.
+- **Lifecycle and display:** Reset, source edits, and a new Debug session create an empty output stream. Render bytes in emission order as specified in the product design; the display is a view, not the stored representation. During Play, follow appended output only while the learner has not scrolled back.
+
+Implementation checks should cover all byte values at the display boundaries, repeated output and ordering, snapshots, preserved state, invalid operands and halted execution, reset/edit/debug lifecycle, and the output event.
+
 ## Memory as a hex explorer
 
 Memory is a first-class, inspectable part of the interface.

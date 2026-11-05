@@ -35,6 +35,7 @@ The Implemented column indicates availability through both the machine core and 
 | `POP destination` | Yes | Copy the top stack byte into a register and remove it from the stack. | Preserved |
 | `CALL target` | Yes | Push a return address and jump. | Preserved |
 | `RET` | Yes | Pop a return address and jump back. | Preserved |
+| `OUT source` | No | Append a register byte to the output stream. | Preserved |
 | `HALT` | Yes | Advance `PC` and set the halted state. | Preserved |
 
 ## Instruction details
@@ -174,6 +175,10 @@ Decode two bytes at `SP`, validate the return address from `0` through program l
 
 `HALT` takes no operands, advances `PC`, and sets `halted` to true. Registers, memory, `SP`, and `ZF` are preserved. The core rejects further execution while halted; the interface disables stepping until reset.
 
+### OUT (planned)
+
+`OUT R0` will append the byte in `R0` to an initially empty, ordered output stream and advance `PC`. It preserves registers, memory, `SP`, `ZF`, and halted status. An output event will identify the source register and byte. Invalid registers and halted execution will leave state unchanged. See the [output contract](technical-design.md#output-contract-out) and [planned panel](tiny-machine-design.md#planned-byte-output).
+
 ## Implementation map
 
 - [src/machine.ts](src/machine.ts): instruction types, state, validation, execution, and events. Memory-writing instructions copy memory so previous states remain intact.
@@ -187,4 +192,4 @@ When adding support, update the core, parser, relevant tests, interface feedback
 
 ## Beyond the initial set
 
-No instruction syntax is specified yet for input/output, heap allocation, device access, or bit operations. Memory-mapped devices and the Game of Life milestone remain broader design work. Multiplication, division, strings, floating point, and objects are outside the initial instruction scope.
+No instruction syntax is specified yet for input, heap allocation, device access, or bit operations. Memory-mapped devices and the Game of Life milestone remain broader design work. Multiplication, division, strings, floating point, and objects are outside the initial instruction scope.
