@@ -6,6 +6,8 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Done
 
+- [x] Add a runnable alphabet sorting example that prints memory before and after sorting.
+
 - [x] Add an SOS beacon variant that writes three messages and dot separators to output, with an execution test.
 
 - [x] Add an example that reverses CAT in memory using the stack.

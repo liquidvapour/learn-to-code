@@ -1,0 +1,225 @@
+; Sort the first 16 uppercase letters: copy into the editor and run.
+; The initial order is fixed and shuffled, so every run is reproducible.
+; Memory 0-15 holds the letters; address 16 holds the remaining passes.
+; Direct memory addresses require each adjacent pair to be written out.
+; Output shows the original order, then the sorted order on the next line.
+; This takes about 12,657 steps: over 100 minutes at the current Play pace.
+MOV R0, 72 ; H
+STORE R0, 0
+MOV R0, 67 ; C
+STORE R0, 1
+MOV R0, 65 ; A
+STORE R0, 2
+MOV R0, 79 ; O
+STORE R0, 3
+MOV R0, 78 ; N
+STORE R0, 4
+MOV R0, 68 ; D
+STORE R0, 5
+MOV R0, 70 ; F
+STORE R0, 6
+MOV R0, 80 ; P
+STORE R0, 7
+MOV R0, 66 ; B
+STORE R0, 8
+MOV R0, 69 ; E
+STORE R0, 9
+MOV R0, 75 ; K
+STORE R0, 10
+MOV R0, 73 ; I
+STORE R0, 11
+MOV R0, 71 ; G
+STORE R0, 12
+MOV R0, 74 ; J
+STORE R0, 13
+MOV R0, 76 ; L
+STORE R0, 14
+MOV R0, 77 ; M
+STORE R0, 15
+; Print the unsorted letters from memory.
+LOAD R0, 0
+OUT R0
+LOAD R0, 1
+OUT R0
+LOAD R0, 2
+OUT R0
+LOAD R0, 3
+OUT R0
+LOAD R0, 4
+OUT R0
+LOAD R0, 5
+OUT R0
+LOAD R0, 6
+OUT R0
+LOAD R0, 7
+OUT R0
+LOAD R0, 8
+OUT R0
+LOAD R0, 9
+OUT R0
+LOAD R0, 10
+OUT R0
+LOAD R0, 11
+OUT R0
+LOAD R0, 12
+OUT R0
+LOAD R0, 13
+OUT R0
+LOAD R0, 14
+OUT R0
+LOAD R0, 15
+OUT R0
+MOV R0, 10 ; Newline
+OUT R0
+MOV R0, 15 ; A bubble sort needs at most 15 passes
+STORE R0, 16
+; pass (PC 68)
+; Compare and order each adjacent pair, then write both back.
+LOAD R0, 0
+LOAD R1, 1
+CALL 184
+STORE R0, 0
+STORE R1, 1
+LOAD R0, 1
+LOAD R1, 2
+CALL 184
+STORE R0, 1
+STORE R1, 2
+LOAD R0, 2
+LOAD R1, 3
+CALL 184
+STORE R0, 2
+STORE R1, 3
+LOAD R0, 3
+LOAD R1, 4
+CALL 184
+STORE R0, 3
+STORE R1, 4
+LOAD R0, 4
+LOAD R1, 5
+CALL 184
+STORE R0, 4
+STORE R1, 5
+LOAD R0, 5
+LOAD R1, 6
+CALL 184
+STORE R0, 5
+STORE R1, 6
+LOAD R0, 6
+LOAD R1, 7
+CALL 184
+STORE R0, 6
+STORE R1, 7
+LOAD R0, 7
+LOAD R1, 8
+CALL 184
+STORE R0, 7
+STORE R1, 8
+LOAD R0, 8
+LOAD R1, 9
+CALL 184
+STORE R0, 8
+STORE R1, 9
+LOAD R0, 9
+LOAD R1, 10
+CALL 184
+STORE R0, 9
+STORE R1, 10
+LOAD R0, 10
+LOAD R1, 11
+CALL 184
+STORE R0, 10
+STORE R1, 11
+LOAD R0, 11
+LOAD R1, 12
+CALL 184
+STORE R0, 11
+STORE R1, 12
+LOAD R0, 12
+LOAD R1, 13
+CALL 184
+STORE R0, 12
+STORE R1, 13
+LOAD R0, 13
+LOAD R1, 14
+CALL 184
+STORE R0, 13
+STORE R1, 14
+LOAD R0, 14
+LOAD R1, 15
+CALL 184
+STORE R0, 14
+STORE R1, 15
+; Repeat until all 15 passes have completed.
+LOAD R0, 16
+MOV R1, 1
+SUB R0, R1
+STORE R0, 16
+JZ 149
+JMP 68
+; print_sorted (PC 149)
+LOAD R0, 0
+OUT R0
+LOAD R0, 1
+OUT R0
+LOAD R0, 2
+OUT R0
+LOAD R0, 3
+OUT R0
+LOAD R0, 4
+OUT R0
+LOAD R0, 5
+OUT R0
+LOAD R0, 6
+OUT R0
+LOAD R0, 7
+OUT R0
+LOAD R0, 8
+OUT R0
+LOAD R0, 9
+OUT R0
+LOAD R0, 10
+OUT R0
+LOAD R0, 11
+OUT R0
+LOAD R0, 12
+OUT R0
+LOAD R0, 13
+OUT R0
+LOAD R0, 14
+OUT R0
+LOAD R0, 15
+OUT R0
+MOV R0, 10
+OUT R0
+HALT
+; compare (PC 184)
+; Return R0 and R1 in ascending order. Save both on the stack.
+; Copies in R2 and R3 count down together. The first to reach zero
+; identifies the smaller byte; if R3 reaches zero first, swap.
+; Subtract 64 first, since all inputs are ASCII A-P (65-80).
+; This is not a general byte comparison.
+PUSH R0
+PUSH R1
+PUSH R0
+POP R2
+PUSH R1
+POP R3
+MOV R0, 64
+SUB R2, R0
+SUB R3, R0
+MOV R0, 1
+; count_down (PC 194)
+SUB R2, R0
+JZ 199
+SUB R3, R0
+JZ 202
+JMP 194
+; ordered (PC 199)
+POP R1
+POP R0
+RET
+; swap (PC 202)
+POP R0
+POP R1
+RET
