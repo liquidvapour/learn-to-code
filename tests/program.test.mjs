@@ -97,7 +97,7 @@ test('LOAD rejects invalid operands with precise source errors and blocks the wh
 test('unsupported-instruction help includes JMP, CMP, SUB, and LOAD', () => {
   assert.deepEqual(parseProgram('UNKNOWN').errors, [{
     lineNumber: 1,
-    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, JMP, JZ, CALL, RET, STORE, LOAD, PUSH, POP, or HALT.',
+    message: 'Unsupported instruction: UNKNOWN. Use MOV, ADD, SUB, CMP, JMP, JZ, CALL, RET, STORE, LOAD, PUSH, POP, OUT, or HALT.',
   }])
 })
 
@@ -402,4 +402,21 @@ test('program length counts instructions and rejects the first beyond 65535', ()
   assert.deepEqual(parseProgram(`${source}\nHALT`), {
     program: [], errors: [{ lineNumber: 65537, message: 'Program cannot exceed 65535 instructions.' }],
   })
+})
+
+
+test('OUT parses a register and runs an output example', () => {
+  const { program, errors } = parseProgram('MOV R0, 65\n out r0 ; A\nMOV R0, 10\nOUT R0\nHALT')
+  assert.deepEqual(errors, [])
+  assert.deepEqual(program[1].instruction, { operation: 'OUT', register: 'R0' })
+  assert.equal(program[1].lineNumber, 2)
+  const state = program.reduce((state, line) => executeInstruction(state, line.instruction).state, createInitialState())
+  assert.deepEqual(state.output, [65, 10])
+})
+
+test('OUT rejects missing, extra, and invalid operands', () => {
+  for (const operand of ['', 'R0,', 'R0 R1', 'R0, R1']) {
+    assert.deepEqual(parseProgram(`MOV R0, 1\nOUT ${operand}`).errors, [{ lineNumber: 2, message: 'Use OUT register.' }])
+  }
+  assert.match(parseProgram('OUT R4').errors[0].message, /not a register/)
 })

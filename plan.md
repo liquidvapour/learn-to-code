@@ -112,15 +112,17 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 - [x] **STORE/LOAD transfer motion:** animate a byte-value badge from the source register to the destination memory cell for STORE, and in reverse for LOAD, using existing execution events. Preserve immediate machine updates and persistent highlights; skip motion with reduced-motion preferences or offscreen endpoints, and cancel stale motion on another step, reset, editing, or navigation. Browser verification remains pending.
   - [x] Add STORE/LOAD transfer badges using event source and destination positions, keeping existing highlights and immediate updates.
   - [x] Handle reduced motion, offscreen endpoints, and cancellation on subsequent actions; run checks.
-- [ ] **`OUT`:** add a byte output FIFO and [output panel](tiny-machine-design.md#planned-byte-output).
+- [x] **`OUT`:** add a byte output FIFO and [output panel](tiny-machine-design.md#planned-byte-output).
   - [x] Define the [output stream contract and execution event](technical-design.md#output-contract-out) before implementation.
   - [x] Add core `OUT` execution with an immutable 64-byte queue and output event; test ordering, state preservation, and invalid operands.
-  - [ ] Add `OUT register` parsing, output feedback and a runnable example; update references and run checks.
+  - [x] Add `OUT register` parsing, output feedback and a runnable example; update references and run checks. Tests and production build pass; browser verification remains pending.
     - Add parser coverage for valid and invalid operands.
     - Show the queue in the output panel and add register-read feedback, including byte rendering, scrolling, and lifecycle behaviour; add a runnable example and update references.
     - Run tests and the production build; verify the panel and scrolling in a browser when available.
 - [ ] **Register-indirect `LOAD` and `STORE`:** allow a register to supply the memory address, alongside existing direct addresses.
   - [ ] Define operand and event behaviour, including when the address and data registers are the same.
+    - Specify source syntax and validation for direct and register-supplied addresses.
+    - Specify read/write events and interface feedback when address and data registers coincide.
   - [ ] Add core execution, parsing, interface feedback, examples, and reference updates; run checks.
 - [ ] **Memory map and faults:** document stack and ordinary-data regions, then give invalid addresses, unsupported instructions, and illegal stack operations clear stopped-state explanations.
   - [ ] Define and document how ordinary data and the stack share memory, including overlap and boundaries.

@@ -103,6 +103,12 @@ export default function InstructionDocs() {
           <p>R1 becomes 12 and SP returns to 256. The source memory cell is highlighted as a read and R1 as a write.</p>
         </section>
         <section>
+          <h3>OUT — write a byte to output</h3>
+          <p><code>OUT register</code> appends the register byte to the output queue and highlights the register as read. The queue keeps the latest 64 bytes, discarding the oldest when full. Registers, memory, SP, and ZF stay unchanged.</p>
+          <pre><code>{'MOV R0, 65\nOUT R0\nMOV R0, 10\nOUT R0\nHALT'}</code></pre>
+          <p>This displays A followed by a newline. Printable ASCII appears as characters, byte 10 starts a line, and other bytes appear as hexadecimal escapes. Reset or editing clears output; pause, halt, and faults preserve it.</p>
+        </section>
+        <section>
           <h3>HALT — stop execution</h3>
           <p><code>HALT</code></p>
           <p>Takes no operands. Advance PC and mark the machine halted. Registers, memory, SP, and ZF stay unchanged. Step is disabled until the machine is reset. If a program advances past its final instruction without HALT, the interface instead reports Program complete.</p>

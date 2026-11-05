@@ -35,7 +35,7 @@ The Implemented column indicates availability through both the machine core and 
 | `POP destination` | Yes | Copy the top stack byte into a register and remove it from the stack. | Preserved |
 | `CALL target` | Yes | Push a return address and jump. | Preserved |
 | `RET` | Yes | Pop a return address and jump back. | Preserved |
-| `OUT source` | No | Append a register byte to the output FIFO. | Preserved |
+| `OUT source` | Yes | Append a register byte to the output FIFO. | Preserved |
 | `HALT` | Yes | Advance `PC` and set the halted state. | Preserved |
 
 ## Instruction details
@@ -175,9 +175,19 @@ Decode two bytes at `SP`, validate the return address from `0` through program l
 
 `HALT` takes no operands, advances `PC`, and sets `halted` to true. Registers, memory, `SP`, and `ZF` are preserved. The core rejects further execution while halted; the interface disables stepping until reset.
 
-### OUT (planned)
+### OUT
 
-`OUT R0` will append the byte in `R0` to an initially empty 64-byte FIFO and advance `PC`. If the queue is full, the oldest byte is discarded to make room. It preserves registers, memory, `SP`, `ZF`, and halted status. An invalid register or halted execution leaves state unchanged. An output event will identify the source register and byte. The output window displays the current queue, oldest byte first. See the [output contract](technical-design.md#output-contract-out) and [planned panel](tiny-machine-design.md#planned-byte-output).
+`OUT R0` appends the byte in `R0` to an initially empty 64-byte FIFO and advance `PC`. If the queue is full, the oldest byte is discarded to make room. It preserves registers, memory, `SP`, `ZF`, and halted status. An invalid register or halted execution leaves state unchanged. An output event identifies the source register and byte. The output window displays the current queue, oldest byte first. Printable ASCII appears as characters, byte 10 as a newline, and other bytes as uppercase hexadecimal escapes. The source register is marked as read. Reset, editing, and starting Debug clear the queue; pause, halt, and faults preserve it.
+
+```text
+MOV R0, 65
+OUT R0
+MOV R0, 10
+OUT R0
+HALT
+```
+
+This emits A followed by a newline. See the [output contract](technical-design.md#output-contract-out) and [output panel](tiny-machine-design.md#planned-byte-output).
 
 ## Implementation map
 

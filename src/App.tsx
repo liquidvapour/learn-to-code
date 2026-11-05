@@ -4,6 +4,7 @@ import {
   createInitialState,
   executeInstruction,
   MEMORY_SIZE,
+  OUTPUT_CAPACITY,
   REGISTER_NAMES,
   type MachineEvent,
   type MachineState,
@@ -46,7 +47,7 @@ function asciiCharacter(value: number) {
 function describeEvent(event: MachineEvent | null) {
   if (event === null) return 'Press Step or Play to execute the highlighted instruction.'
   if (event.kind === 'halt') return 'HALT stopped execution. Reset to run again.'
-  if (event.kind === 'output') return `${event.sourceRegister} → output: ${event.value}`
+  if (event.kind === 'output') return `${event.sourceRegister} → output: ${event.value} (${hex(event.value)})`
   if (event.kind === 'branch') {
     if (event.operation === 'JZ') {
       return `JZ ${event.target}: ZF = ${Number(event.taken)}, ${event.taken ? 'jump taken' : 'not taken; continue'} — PC ${event.previousPc} → ${event.nextPc}`
@@ -140,12 +141,18 @@ function App() {
       window.removeEventListener('resize', cancel)
     }
   }, [execution, showDocs, programMode])
+  const outputView = useRef<HTMLDivElement>(null)
+  const followOutput = useRef(true)
+  useLayoutEffect(() => {
+    const panel = outputView.current
+    if (panel && followOutput.current) panel.scrollTop = panel.scrollHeight
+  }, [machine.output])
   const activeLine = useRef<HTMLLIElement>(null)
   useEffect(() => {
     activeLine.current?.scrollIntoView({ block: 'nearest' })
   }, [machine.pc, programMode])
   const readRegisters = lastEvent?.kind === 'comparison' ? [lastEvent.register, lastEvent.sourceRegister]
-    : lastEvent?.kind === 'memory-write' ? [lastEvent.sourceRegister]
+    : lastEvent?.kind === 'memory-write' || lastEvent?.kind === 'output' ? [lastEvent.sourceRegister]
       : lastEvent?.kind === 'register-write' && (lastEvent.source === 'addition' || lastEvent.source === 'subtraction') ? [lastEvent.sourceRegister] : []
   const writtenRegister = lastEvent?.kind === 'register-write' ? lastEvent.register : null
   const readZeroFlag = lastEvent?.kind === 'branch' && lastEvent.operation === 'JZ'
@@ -188,6 +195,7 @@ function App() {
   })
 
   function reset() {
+    followOutput.current = true
     setPlaying(false)
     setExecution({ machine: createInitialState(), lastEvent: null, error: null, transfer: null })
   }
@@ -246,7 +254,7 @@ function App() {
                 />
               </div>
               <p className="syntax-help" id="syntax-help">
-                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>JMP 0</code> · <code>JZ 0</code> · <code>CALL 0</code> · <code>RET</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>POP R1</code> · <code>HALT</code>.
+                Syntax: <code>MOV R0, 5</code> · <code>ADD R0, R1</code> · <code>SUB R0, R1</code> · <code>CMP R0, R1</code> · <code>JMP 0</code> · <code>JZ 0</code> · <code>CALL 0</code> · <code>RET</code> · <code>STORE R2, 0</code> · <code>LOAD R3, 0</code> · <code>PUSH R0</code> · <code>POP R1</code> · <code>OUT R0</code> · <code>HALT</code>.
                 {' '}Registers: R0–R3. MOV values and STORE/LOAD addresses: decimal 0–255. JMP/JZ/CALL targets: decimal instruction indices starting at 0. Case and spacing are flexible; blank lines are skipped. Use ; for comments through the end of a line.
                 {' '}<a href="#instructions">Full instruction reference</a>.
               </p>
@@ -346,6 +354,17 @@ function App() {
                   </tbody>
                 </table>
               )}
+            </div>
+          </section>
+
+          <section className="panel output-panel" aria-labelledby="output-title">
+            <div className="module-heading"><h2 id="output-title"><span>05</span> Output</h2><span className="module-label">{machine.output.length} / {OUTPUT_CAPACITY} BYTES</span></div>
+            <p className="panel-note">Oldest first · printable ASCII, newline, or \xHH for other bytes.</p>
+            <div className="output-content" ref={outputView} tabIndex={0} role="region" aria-label="Output bytes" onScroll={(event) => {
+              const element = event.currentTarget
+              followOutput.current = element.scrollHeight - element.scrollTop - element.clientHeight <= 2
+            }}>
+              {machine.output.length === 0 ? <span className="output-empty">No output yet.</span> : machine.output.map((value) => value === 10 ? '\n' : value >= 32 && value <= 126 ? String.fromCharCode(value) : `\\x${value.toString(16).toUpperCase().padStart(2, '0')}`).join('')}
             </div>
           </section>
 
