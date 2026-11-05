@@ -105,7 +105,7 @@ Multiplication, division, strings, floating point, objects, and other features s
 
 ### Planned register-indirect memory access
 
-Allow `LOAD R0, R1` and `STORE R0, R1` to use the address held in `R1`, alongside the existing decimal-address forms. This lets programs walk through memory by changing a register. The second operand supplies the address as either a number or a register value; register addresses are not implemented yet.
+Allow `LOAD RX, RY` and `STORE RX, RY` to use the address held in `RY`, alongside the existing decimal-address forms. `RX` and `RY` each stand for any register from `R0` to `R3`, and may name the same register. This lets programs walk through memory by changing a register. The second operand supplies the address as either a number or a register value; register addresses are not implemented yet.
 
 Show the address register as read, the resolved memory cell as read or written, and the data register as written or read respectively. Explain the resolved address and retain the existing transfer animation. When the same register has both roles, show both applicable cues and explain that its original value supplies the address. Details and validation are in the [technical contract](technical-design.md#memory-contract-register-indirect-load-and-store).
 

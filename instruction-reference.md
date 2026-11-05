@@ -68,7 +68,7 @@ Memory address `0` holds decimal `65`, displayed as hex `41` and ASCII `A`. Addr
 
 #### Planned register-indirect addressing
 
-`LOAD R0, R1` and `STORE R0, R1` will use the byte in R1 as the memory address; these forms are not implemented yet. With `LOAD R0, R0`, the original R0 selects the address before R0 is replaced. With `STORE R0, R0`, the original R0 supplies both address and value. See the [contract](technical-design.md#memory-contract-register-indirect-load-and-store) for validation and feedback.
+`LOAD RX, RY` and `STORE RX, RY` will use the byte in RY as the memory address; these forms are not implemented yet. RX and RY each stand for any register from R0 to R3 and may be the same register. For example, with `LOAD R0, R0`, the original R0 selects the address before R0 is replaced. With `STORE R0, R0`, the original R0 supplies both address and value. See the [contract](technical-design.md#memory-contract-register-indirect-load-and-store) for validation and feedback.
 
 ### ADD
 
