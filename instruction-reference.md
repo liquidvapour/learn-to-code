@@ -177,7 +177,7 @@ Decode two bytes at `SP`, validate the return address from `0` through program l
 
 ### OUT (planned)
 
-`OUT R0` will append the byte in `R0` to an initially empty 64-byte FIFO and advance `PC`. It preserves registers, memory, `SP`, `ZF`, and halted status. A full queue, invalid register, or halted execution leaves state unchanged. An output event will identify the source register and byte. By default, the device consumes queued bytes after each successful instruction and adds them to a visible history. See the [output contract](technical-design.md#output-contract-out) and [planned panel](tiny-machine-design.md#planned-byte-output).
+`OUT R0` will append the byte in `R0` to an initially empty 64-byte FIFO and advance `PC`. If the queue is full, the oldest byte is discarded to make room. It preserves registers, memory, `SP`, `ZF`, and halted status. An invalid register or halted execution leaves state unchanged. An output event will identify the source register and byte. The output window displays the current queue, oldest byte first. See the [output contract](technical-design.md#output-contract-out) and [planned panel](tiny-machine-design.md#planned-byte-output).
 
 ## Implementation map
 
