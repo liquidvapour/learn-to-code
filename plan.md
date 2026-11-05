@@ -6,7 +6,7 @@ The product goals are in [tiny-machine-design.md](tiny-machine-design.md). The p
 
 ## Done
 
-- [x] Clarify register placeholders in the planned indirect memory access design and reference.
+- [x] Record the clear-specification design principle and define operand placeholders for all instructions in the design and reference.
 
 - [x] Move the memory description and legend and the output description into their headings, and make output text more prominent while preserving the viewport layout; production build passes, browser verification remains pending.
 

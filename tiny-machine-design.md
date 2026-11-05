@@ -35,6 +35,10 @@ The machine should be intentionally simpler than a real CPU. It is a teaching mo
 
 Every feature should earn its place.
 
+### A clear specification
+
+Give learners the experience of reading a clean, clear specification. Define terms and operand placeholders explicitly, describe general instruction forms and rules, and use concrete examples to illustrate how those rules work. Readers should be able to tell what can vary and understand the machine's behaviour without guessing from examples alone.
+
 ### Welcoming defaults, deeper control
 
 Choose defaults that make common programs satisfying to write and run without setup. The machine should behave predictably and explain what it is doing, so convenience helps learners get started without hiding the underlying model.
@@ -83,20 +87,28 @@ The exact memory layout should be visible to the learner.
 
 The first version should use a deliberately small instruction set.
 
+The following placeholders describe syntax; they are not literal operands:
+
+- `RX` and `RY`: any register from `R0` to `R3`. They may name the same register.
+- `value`: an unsigned decimal integer from `0` to `255`, used directly as a byte.
+- `address`: an unsigned decimal integer from `0` to `255`, identifying a byte in data memory.
+- `target`: an unsigned decimal instruction index, starting at `0` and identifying an instruction in the current program. Blank and comment-only lines do not count. Targets refer to instructions, not data memory, and can exceed `255`.
+
 | Instruction | Meaning |
 | --- | --- |
-| `MOV R0, 5` | Put an immediate value into a register |
-| `LOAD R0, 42` | Copy memory address `42` into `R0` |
-| `STORE R0, 42` | Copy `R0` into memory address `42` |
-| `ADD R0, R1` | `R0 = R0 + R1` |
-| `SUB R0, R1` | `R0 = R0 - R1` |
-| `CMP R0, R1` | Compare values and set `ZF` |
-| `JMP 20` | Jump to instruction `20` |
-| `JZ 20` | Jump if `ZF` is set |
-| `PUSH R0` | Push a register value onto the stack |
-| `POP R0` | Pop the top stack value into a register |
-| `CALL 20` | Push return address and jump |
+| `MOV RX, value` | Put an immediate value into `RX` |
+| `LOAD RX, address` | Copy the byte at `address` into `RX` |
+| `STORE RX, address` | Copy `RX` into memory at `address` |
+| `ADD RX, RY` | `RX = RX + RY` |
+| `SUB RX, RY` | `RX = RX - RY` |
+| `CMP RX, RY` | Compare the registers and set `ZF` |
+| `JMP target` | Jump to instruction `target` |
+| `JZ target` | Jump to `target` if `ZF` is set |
+| `PUSH RX` | Push `RX` onto the stack |
+| `POP RX` | Pop the top stack value into `RX` |
+| `CALL target` | Push return address and jump to `target` |
 | `RET` | Pop return address and jump back |
+| `OUT RX` | Append `RX` to output |
 | `HALT` | Stop execution |
 
 This is enough to teach variables, arithmetic, conditions, loops, stack behaviour, and functions.
@@ -105,7 +117,7 @@ Multiplication, division, strings, floating point, objects, and other features s
 
 ### Planned register-indirect memory access
 
-Allow `LOAD RX, RY` and `STORE RX, RY` to use the address held in `RY`, alongside the existing decimal-address forms. `RX` and `RY` each stand for any register from `R0` to `R3`, and may name the same register. This lets programs walk through memory by changing a register. The second operand supplies the address as either a number or a register value; register addresses are not implemented yet.
+Allow `LOAD RX, RY` and `STORE RX, RY` to use the address held in `RY`, alongside the existing decimal-address forms. This lets programs walk through memory by changing a register. The second operand supplies the address as either a number or a register value; register addresses are not implemented yet.
 
 Show the address register as read, the resolved memory cell as read or written, and the data register as written or read respectively. Explain the resolved address and retain the existing transfer animation. When the same register has both roles, show both applicable cues and explain that its original value supplies the address. Details and validation are in the [technical contract](technical-design.md#memory-contract-register-indirect-load-and-store).
 

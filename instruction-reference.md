@@ -19,23 +19,28 @@ The Implemented column indicates availability through both the machine core and 
 
 ## Complete instruction set
 
-`destination` and `source` mean registers; `value` is an immediate byte; `address` is a memory address. For control flow, `target` means an instruction index, from `0` through `N - 1` for a program with `N` instructions; it is not limited to one byte.
+The following placeholders describe syntax; they are not literal operands:
+
+- `RX` and `RY`: any register from `R0` to `R3`. They may name the same register.
+- `value`: an unsigned decimal integer from `0` to `255`, used directly as a byte.
+- `address`: an unsigned decimal integer from `0` to `255`, identifying a byte in data memory.
+- `target`: an unsigned decimal instruction index from `0` through `N - 1` in a program with `N` instructions. Blank and comment-only lines do not count. Targets refer to instructions, not data memory, and can exceed `255`; programs have at most 65,535 instructions.
 
 | Instruction | Implemented | Meaning | ZF effect |
 | --- | --- | --- | --- |
-| `MOV destination, value` | Yes | Replace a register with an immediate byte. | Preserved |
-| `LOAD destination, address` | Yes | Copy a memory byte into a register. | Preserved |
-| `STORE source, address` | Yes | Copy a register byte into memory. | Preserved |
-| `ADD destination, source` | Yes | Add register values into the destination, modulo 256. | Set if stored result is zero; otherwise cleared |
-| `SUB destination, source` | Yes | Subtract source from destination, modulo 256. | Set if stored result is zero; otherwise cleared |
-| `CMP destination, source` | Yes | Compare two registers without changing them. | Set if values are equal; otherwise cleared |
+| `MOV RX, value` | Yes | Replace a register with an immediate byte. | Preserved |
+| `LOAD RX, address` | Yes | Copy a memory byte into a register. | Preserved |
+| `STORE RX, address` | Yes | Copy a register byte into memory. | Preserved |
+| `ADD RX, RY` | Yes | Add RY to RX, modulo 256. | Set if stored result is zero; otherwise cleared |
+| `SUB RX, RY` | Yes | Subtract RY from RX, modulo 256. | Set if stored result is zero; otherwise cleared |
+| `CMP RX, RY` | Yes | Compare two registers without changing them. | Set if values are equal; otherwise cleared |
 | `JMP target` | Yes | Jump unconditionally. | Preserved |
 | `JZ target` | Yes | Jump when `ZF` is set. | Preserved |
-| `PUSH source` | Yes | Decrement `SP`, then copy the register into memory at `SP`. | Preserved |
-| `POP destination` | Yes | Copy the top stack byte into a register and remove it from the stack. | Preserved |
+| `PUSH RX` | Yes | Decrement `SP`, then copy the register into memory at `SP`. | Preserved |
+| `POP RX` | Yes | Copy the top stack byte into a register and remove it from the stack. | Preserved |
 | `CALL target` | Yes | Push a return address and jump. | Preserved |
 | `RET` | Yes | Pop a return address and jump back. | Preserved |
-| `OUT source` | Yes | Append a register byte to the output FIFO. | Preserved |
+| `OUT RX` | Yes | Append a register byte to the output FIFO. | Preserved |
 | `HALT` | Yes | Advance `PC` and set the halted state. | Preserved |
 
 ## Instruction details
@@ -68,7 +73,7 @@ Memory address `0` holds decimal `65`, displayed as hex `41` and ASCII `A`. Addr
 
 #### Planned register-indirect addressing
 
-`LOAD RX, RY` and `STORE RX, RY` will use the byte in RY as the memory address; these forms are not implemented yet. RX and RY each stand for any register from R0 to R3 and may be the same register. For example, with `LOAD R0, R0`, the original R0 selects the address before R0 is replaced. With `STORE R0, R0`, the original R0 supplies both address and value. See the [contract](technical-design.md#memory-contract-register-indirect-load-and-store) for validation and feedback.
+`LOAD RX, RY` and `STORE RX, RY` will use the byte in RY as the memory address; these forms are not implemented yet. For example, with `LOAD R0, R0`, the original R0 selects the address before R0 is replaced. With `STORE R0, R0`, the original R0 supplies both address and value. See the [contract](technical-design.md#memory-contract-register-indirect-load-and-store) for validation and feedback.
 
 ### ADD
 
